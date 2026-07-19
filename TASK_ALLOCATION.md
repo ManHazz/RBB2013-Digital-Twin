@@ -1,10 +1,56 @@
 # XLeRobot Digital Twin — Atomic Task List (Group of 5)
 
-**How to use this file:** each teammate finds their section, copies the **next unchecked task block** into Claude Code, and lets it run. Claude Code does exactly that task, commits, and pushes. Nobody needs to plan, design, or decide — the task tells them everything.
+## How to use this file
 
-**Do tasks in order** within your section. A task's *Preconditions* line names the task that must be done first (either yours or someone else's).
+Your branch is already created on GitHub — you just need to work in it.
 
-**Sprint 2 tasks will be added after Sprint 1 lands.** Do not skip ahead.
+### One-time setup (do this once)
+
+```bash
+git clone https://github.com/ManHazz/RBB2013-Digital-Twin.git
+cd RBB2013-Digital-Twin
+git checkout <your-branch>          # e.g. feat/nl-command — see your section below
+python3 -m venv venv
+source venv/bin/activate            # Windows: venv\Scripts\activate
+```
+
+### For each task block below
+
+**If you have Claude Code CLI:** paste the whole task block into Claude Code — it will create files, run checks, and push automatically.
+
+**If you're on Gemini Pro / Claude web / any chat LLM:** follow this drill for each task:
+
+1. **Give the LLM context first.** Open your chat and paste this so it knows the shared contract types:
+
+   ```
+   In this project, all services share these pydantic v2 types from
+   services/shared/schemas.py — do not invent new field names:
+
+   [paste the contents of services/shared/schemas.py here]
+   ```
+
+2. **Paste the task block** (e.g. "Bento-01" — the whole thing including *Do exactly this*, *Done when*, *Push*).
+
+3. **Add this instruction at the end of your chat message:**
+
+   ```
+   Generate every file described in the task. For each file, output
+   its full path as a header, then its complete contents in a fenced
+   code block, so I can copy each one verbatim into my editor.
+   ```
+
+4. **Save each file** the LLM produces to the exact path shown.
+
+5. **Run the "Done when" check** yourself in your terminal. If it fails, paste the error back into the chat and ask the LLM to fix it, then re-save.
+
+6. **Run the `Push` commands** from the task block in your terminal.
+
+### Rules
+
+- **Do tasks in order** within your section. A *Preconditions* line names what must be done first (yours or someone else's).
+- **One task = one commit = one push.** Don't batch multiple tasks into a single commit.
+- **Never edit `services/shared/schemas.py`** — that's Aiman's frozen contract. If you think a field is wrong, message Aiman.
+- **Sprint 2 tasks will be added after Sprint 1 lands.** Do not skip ahead.
 
 ---
 
