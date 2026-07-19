@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# kit-app-template — mirror its own .gitignore
+kit-app-template/_*/
+kit-app-template/source/
+kit-app-template/source.zip
+kit-app-template/.omniverse_eula_accepted.txt
+kit-app-template/PACKAGE-DEPS.yaml
+kit-app-template/deps/**/user.toml
+kit-app-template/**/*.packman.xml.user
+kit-app-template/.vs/
+kit-app-template/**/.vscode/ipch
+kit-app-template/.vscode/settings.json
+kit-app-template/.nvidia-omniverse
+kit-app-template/.local
+kit-app-template/.cache
+kit-app-template/*.etli
