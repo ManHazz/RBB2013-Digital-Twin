@@ -1,22 +1,14 @@
-"""Unit tests for the telemetry service's TimescaleDB write path.
-
-Uses testcontainers to spin up a real timescale/timescaledb image,
-applies infra/timescaledb/init.sql against it, then calls
-insert_state() directly (no ZMQ, no daemon loop) and reads the row
-back with a plain SELECT.
-
-Requires Docker to be running locally:
-    pip install pytest testcontainers psycopg[binary]
-    pytest tests/unit/test_telemetry.py -k timescale
-"""
+import json
 import time
 
 import psycopg
 import pytest
+import redis as redis_lib
 from testcontainers.postgres import PostgresContainer
+from testcontainers.redis import RedisContainer
 
 from services.shared.schemas import SimState, TargetPose
-from services.telemetry.app import insert_state
+from services.telemetry.app import insert_state, set_latest_state, REDIS_LATEST_KEY
 
 INIT_SQL_PATH = "infra/timescaledb/init.sql"
 
@@ -63,3 +55,28 @@ def test_insert_and_read(pg_dsn):
     assert ee_x == pytest.approx(state.ee_pose.x)
     assert ee_y == pytest.approx(state.ee_pose.y)
     assert ee_z == pytest.approx(state.ee_pose.z)
+
+@pytest.fixture(scope="module")
+def redis_url():
+    with RedisContainer() as r:
+        yield f"redis://{r.get_container_host_ip()}:{r.get_exposed_port(6379)}/0"
+
+
+def test_redis_latest_state_overwrites(redis_url):
+    """Confirms Redis holds only the latest state — proves state persistence
+    (as opposed to Timescale's full history)."""
+    client = redis_lib.Redis.from_url(redis_url)
+
+    first = _fake_state()
+    set_latest_state(client, first)
+    stored = json.loads(client.get(REDIS_LATEST_KEY))
+    assert stored["joints"] == pytest.approx(first.joints)
+
+    second = _fake_state()
+    second.joints[0] = 9.9
+    set_latest_state(client, second)
+    stored = json.loads(client.get(REDIS_LATEST_KEY))
+
+    # latest write wins — key holds second's data, not first's
+    assert stored["joints"][0] == pytest.approx(9.9)
+    assert stored["joints"] != pytest.approx(first.joints)
