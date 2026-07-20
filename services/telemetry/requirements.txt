@@ -1,0 +1,4 @@
+pyzmq
+psycopg[binary]
+redis
+pydantic>=2
