@@ -11,3 +11,8 @@ def test_ik_roundtrip_reachable_target():
 
     err = math.sqrt(sum((a - b) ** 2 for a, b in zip(target, tip)))
     assert err < 1e-3
+
+
+def test_unreachable_target_returns_false_not_error():
+    x, y, z = 200.0, 200.0, 200.0
+    assert not ik.reachable(x, y, z)
