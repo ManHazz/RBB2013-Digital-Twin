@@ -1,5 +1,5 @@
 # CONTRACT — do not edit without Aiman's approval. Version: 1.0
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CommandRequest(BaseModel):
@@ -17,13 +17,13 @@ class PlanRequest(BaseModel):
 
 
 class PlanResponse(BaseModel):
-    joints: list[float]  # must be exactly 6 floats
+    joints: list[float] = Field(min_length=6, max_length=6)
     reachable: bool
     collision_free: bool
 
 
 class DispatchRequest(BaseModel):
-    joints: list[float]
+    joints: list[float] = Field(min_length=6, max_length=6)
 
 
 class DispatchResponse(BaseModel):
@@ -31,10 +31,10 @@ class DispatchResponse(BaseModel):
 
 
 class SimState(BaseModel):
-    joints: list[float]
+    joints: list[float] = Field(min_length=6, max_length=6)
     ee_pose: TargetPose
     ts: float
 
 
 class ActuationCommand(BaseModel):
-    joints: list[float]
+    joints: list[float] = Field(min_length=6, max_length=6)
