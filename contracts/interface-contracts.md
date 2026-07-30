@@ -91,13 +91,14 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+{"joints": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6], "frame_id": 12}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** when POST /dispatch is accepted with a valid joints target
 
-**Concluded:** _tbd_
+**Concluded:** after 30 frames are sent over ZMQ PUSH on tcp://*:5556
 
-**Error modes:** _tbd_
+**Error modes:** if sim-bridge is not connected, PUSH buffers frames; if buffer fills, dispatcher blocks. No error is returned to the caller of POST /dispatch (fire-and-forget).
 
 ---
 
@@ -155,13 +156,14 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+{"joints": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** when dispatcher POSTs to actuation's /actuate endpoint after a run's interpolation completes
 
-**Concluded:** _tbd_
+**Concluded:** when MQTT broker acknowledges the publish (rc == 0)
 
-**Error modes:** _tbd_
+**Error modes:** returns HTTP 502 if MQTT publish fails; HTTP 503 if MQTT client not initialised; HTTP 422 if joints array is not exactly 6 floats.
 
 ---
 
