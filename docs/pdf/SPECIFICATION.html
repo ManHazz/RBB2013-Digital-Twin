@@ -7808,7 +7808,6 @@ a.anchor-link {
       font-size: 10.5pt;
       line-height: 1.45;
     }
-    /* prevent code + tables overflowing right edge */
     pre, code {
       white-space: pre-wrap !important;
       word-wrap: break-word !important;
@@ -7821,18 +7820,33 @@ a.anchor-link {
     table {
       width: 100% !important;
       max-width: 100% !important;
-      table-layout: fixed !important;
+      table-layout: auto !important;
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
       font-size: 9pt !important;
-      border-collapse: collapse;
+      border-collapse: collapse !important;
+      border: 1px solid #999 !important;
+      margin: 8px 0 !important;
+    }
+    thead {
+      background: #e8e8e8 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    th {
+      background: #e8e8e8 !important;
+      font-weight: 700 !important;
+      text-align: left !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     td, th {
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
       max-width: 100% !important;
-      padding: 4px 6px !important;
-      vertical-align: top;
+      padding: 5px 8px !important;
+      vertical-align: top !important;
+      border: 1px solid #bbb !important;
     }
     img {
       max-width: 100% !important;
@@ -7845,21 +7859,19 @@ a.anchor-link {
     .jp-Cell, .cell, .jp-CodeCell {
       page-break-inside: avoid;
     }
-    /* Jupyter notebook wrappers */
     .jp-InputArea-editor, .jp-OutputArea-output, .highlight, .input_area {
       max-width: 100% !important;
       overflow: hidden !important;
     }
-    /* Long link URLs shouldn't blow out the layout */
     a {
       word-break: break-all;
     }
   }
-  /* apply to screen too so print-preview shows the same */
+  /* on-screen styling — same look as print, so preview matches */
   pre, code {
-    white-space: pre-wrap !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     max-width: 100%;
   }
   table {
@@ -7868,10 +7880,19 @@ a.anchor-link {
     table-layout: auto;
     word-wrap: break-word;
     border-collapse: collapse;
+    border: 1px solid #999;
+    margin: 8px 0;
+  }
+  thead, th {
+    background: #e8e8e8;
+    font-weight: 700;
+    text-align: left;
   }
   td, th {
     word-wrap: break-word;
-    padding: 6px 8px;
+    padding: 6px 10px;
+    border: 1px solid #bbb;
+    vertical-align: top;
   }
   img {
     max-width: 100%;
@@ -7881,7 +7902,7 @@ a.anchor-link {
 </head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e6e57123">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1db20dab">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7925,7 +7946,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1eb1d0d3">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2884c9a3">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7942,7 +7963,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2294fa0a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6f4445bd">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7962,7 +7983,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e4d4ee1c">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=34b21e7f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8029,7 +8050,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=dc69361e">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=92fe09f0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8137,7 +8158,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=657fc12c">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4daf8743">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8262,7 +8283,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=ad5ff209">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=8a57e784">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8293,7 +8314,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a8b5ff21">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ce5db4d7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8350,7 +8371,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=64fcd626">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=80e968c6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8408,7 +8429,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=022b35ac">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f215fcf9">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8434,7 +8455,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2b9aa7ed">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=b9ceec4a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8462,7 +8483,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=02c3f1db">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d28b3b1c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8510,7 +8531,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5329e9d1">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=907ff9fd">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>

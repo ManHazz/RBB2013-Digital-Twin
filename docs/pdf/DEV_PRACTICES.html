@@ -18,7 +18,6 @@
       font-size: 10.5pt;
       line-height: 1.45;
     }
-    /* prevent code + tables overflowing right edge */
     pre, code {
       white-space: pre-wrap !important;
       word-wrap: break-word !important;
@@ -31,18 +30,33 @@
     table {
       width: 100% !important;
       max-width: 100% !important;
-      table-layout: fixed !important;
+      table-layout: auto !important;
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
       font-size: 9pt !important;
-      border-collapse: collapse;
+      border-collapse: collapse !important;
+      border: 1px solid #999 !important;
+      margin: 8px 0 !important;
+    }
+    thead {
+      background: #e8e8e8 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    th {
+      background: #e8e8e8 !important;
+      font-weight: 700 !important;
+      text-align: left !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     td, th {
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
       max-width: 100% !important;
-      padding: 4px 6px !important;
-      vertical-align: top;
+      padding: 5px 8px !important;
+      vertical-align: top !important;
+      border: 1px solid #bbb !important;
     }
     img {
       max-width: 100% !important;
@@ -55,21 +69,19 @@
     .jp-Cell, .cell, .jp-CodeCell {
       page-break-inside: avoid;
     }
-    /* Jupyter notebook wrappers */
     .jp-InputArea-editor, .jp-OutputArea-output, .highlight, .input_area {
       max-width: 100% !important;
       overflow: hidden !important;
     }
-    /* Long link URLs shouldn't blow out the layout */
     a {
       word-break: break-all;
     }
   }
-  /* apply to screen too so print-preview shows the same */
+  /* on-screen styling — same look as print, so preview matches */
   pre, code {
-    white-space: pre-wrap !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     max-width: 100%;
   }
   table {
@@ -78,10 +90,19 @@
     table-layout: auto;
     word-wrap: break-word;
     border-collapse: collapse;
+    border: 1px solid #999;
+    margin: 8px 0;
+  }
+  thead, th {
+    background: #e8e8e8;
+    font-weight: 700;
+    text-align: left;
   }
   td, th {
     word-wrap: break-word;
-    padding: 6px 8px;
+    padding: 6px 10px;
+    border: 1px solid #bbb;
+    vertical-align: top;
   }
   img {
     max-width: 100%;
@@ -100,9 +121,6 @@
   h1, h2, h3, h4 { color: #111; }
   h1 { border-bottom: 2px solid #ccc; padding-bottom: 0.3em; }
   h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.2em; margin-top: 2em; }
-  table { border: 1px solid #ccc; }
-  th { background: #f5f5f5; text-align: left; }
-  td, th { border: 1px solid #ddd; }
   code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
   pre { background: #f4f4f4; padding: 8px 12px; border-radius: 4px; border: 1px solid #e0e0e0; }
   pre code { background: transparent; padding: 0; }
