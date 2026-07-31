@@ -2,3 +2,4 @@ fastapi
 uvicorn
 pyzmq
 pydantic>=2
+httpx

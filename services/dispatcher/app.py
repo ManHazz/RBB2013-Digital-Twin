@@ -6,6 +6,13 @@ from services.shared.schemas import (
 
 import zmq
 import time
+import os
+import httpx
+
+ACTUATION_URL = os.environ.get(
+    "ACTUATION_URL",
+    "http://localhost:8040/actuate"
+)
 
 app = FastAPI(
     title="Dispatcher Service",
@@ -16,10 +23,27 @@ app = FastAPI(
 current_joints = [0, 0, 0, 0, 0, 0]
 
 # ZMQ setup
-context = zmq.Context()
-socket = context.socket(zmq.PUSH)
-socket.bind("tcp://*:5556")
+context: zmq.Context | None = None
+socket: zmq.Socket | None = None
 
+@app.on_event("startup")
+def _startup_zmq() -> None:
+    global context, socket
+
+    context = zmq.Context()
+    socket = context.socket(zmq.PUSH)
+    socket.bind("tcp://*:5556")
+
+
+@app.on_event("shutdown")
+def _shutdown_zmq() -> None:
+    global socket, context
+
+    if socket is not None:
+        socket.close()
+
+    if context is not None:
+        context.term()
 
 def interpolate(start, target):
     frames = []
@@ -37,11 +61,13 @@ def interpolate(start, target):
 
     return frames
 
-
 @app.post("/dispatch", response_model=DispatchResponse)
 def dispatch(request: DispatchRequest):
 
     global current_joints
+
+    if socket is None:
+        raise RuntimeError("Dispatcher ZMQ socket not initialised")
 
     target = request.joints
 
@@ -61,8 +87,21 @@ def dispatch(request: DispatchRequest):
 
         time.sleep(1 / 30)
 
-    current_joints = target
+    # Run validated — trigger actuation
+    # Run validated — trigger actuation
+        try:
+            with httpx.Client(timeout=5.0) as client:
+            response = client.post(
+                ACTUATION_URL,
+                json={"joints": target}
+            )
+            response.raise_for_status()
 
-    return DispatchResponse(
-        accepted=True
-    )
+    except httpx.HTTPError as e:
+        print(f"[dispatcher] actuation call failed: {e}")
+
+        current_joints = target
+
+        return DispatchResponse(
+            accepted=True
+        )

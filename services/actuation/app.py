@@ -1,38 +1,60 @@
 import json
-import zmq
+import os
+
 import paho.mqtt.client as mqtt
+from fastapi import FastAPI, HTTPException
 
 from services.shared.schemas import ActuationCommand
 
-# MQTT setup
-client = mqtt.Client()
-client.connect("localhost", 1883, 60)
+MQTT_HOST = os.environ.get("MQTT_HOST", "mosquitto")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
+MQTT_TOPIC = "xlerobot/cmd"
 
-# ZMQ setup
-context = zmq.Context()
-socket = context.socket(zmq.PULL)
-socket.connect("tcp://localhost:5556")
+app = FastAPI(title="actuation")
 
-print("Actuation Service Started...")
+_client: mqtt.Client | None = None
 
-while True:
 
-    message = socket.recv_json()
+@app.on_event("startup")
+def _connect_mqtt() -> None:
+    global _client
+    _client = mqtt.Client()
+    _client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
+    _client.loop_start()
 
-    command = ActuationCommand(
-        joints=message["joints"]
-    )
 
-    print(f"Received frame {message['frame_id']}")
+@app.on_event("shutdown")
+def _disconnect_mqtt() -> None:
+    if _client is not None:
+        _client.loop_stop()
+        _client.disconnect()
 
-    client.publish(
-        "robot/joints",
-        json.dumps({
-            "frame_id": message["frame_id"],
-            "joints": command.joints
-        })
-    )
 
-    print(
-        f"Published frame {message['frame_id']} to MQTT"
-    )
+@app.post("/actuate")
+def actuate(cmd: ActuationCommand) -> dict:
+    if _client is None:
+        raise HTTPException(503, "MQTT client not initialised")
+
+    payload = json.dumps({
+        "joints": cmd.joints
+    })
+
+    result = _client.publish(MQTT_TOPIC, payload)
+
+    if result.rc != mqtt.MQTT_ERR_SUCCESS:
+        raise HTTPException(
+            502,
+            f"MQTT publish failed: rc={result.rc}"
+        )
+
+    return {
+        "published": True,
+        "topic": MQTT_TOPIC
+    }
+
+
+@app.get("/health")
+def health() -> dict:
+    return {
+        "status": "ok"
+    }
