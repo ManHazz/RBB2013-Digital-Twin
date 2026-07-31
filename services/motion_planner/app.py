@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from services.shared.schemas import PlanRequest, PlanResponse
+
 from services.motion_planner import robot_ik as ik
+from services.shared.schemas import PlanRequest, PlanResponse
 
 app = FastAPI()
 

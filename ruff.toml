@@ -1,0 +1,11 @@
+line-length = 100
+
+[lint]
+ignore = [
+    "RUF007",  # itertools.pairwise preference — stylistic, robot_ik.py is contract-frozen
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = [
+    "SIM117",  # nested-with combining — clearer as-is in test fixtures
+]

@@ -8,16 +8,14 @@
 import json
 import time
 
+import psycopg
 import pytest
 import redis
-import psycopg
-import zmq
 from testcontainers.postgres import PostgresContainer
 from testcontainers.redis import RedisContainer
 
-from services.telemetry.app import insert_state, set_latest_state
 from services.shared.schemas import SimState, TargetPose
-
+from services.telemetry.app import insert_state, set_latest_state
 
 INIT_SQL = """
 CREATE EXTENSION IF NOT EXISTS timescaledb;

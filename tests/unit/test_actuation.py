@@ -1,8 +1,9 @@
 import json
 from unittest.mock import MagicMock
 
-import services.actuation.app as actuation_app
 from fastapi.testclient import TestClient
+
+import services.actuation.app as actuation_app
 
 
 def test_actuate_publishes_to_correct_topic(monkeypatch):

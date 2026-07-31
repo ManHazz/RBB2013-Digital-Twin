@@ -5,7 +5,6 @@
 # Uses testcontainers to spin up mosquitto for the test session.
 
 import json
-import os
 import time
 
 import paho.mqtt.client as mqtt
