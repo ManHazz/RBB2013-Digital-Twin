@@ -77,16 +77,16 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 **Payload example:**
 ```json
 // request
-{ "target": { "x": 40.0, "y": 13.75, "z": 0.0 } }
+{ "target": { "x": 35.0, "y": 5.0, "z": 10.0 } }
 // response
-{ "joints": [0,0,0,0,0,0], "reachable": true, "collision_free": true }
+{ "joints": [0.32, 1.54, -1.47, 3.08, 0.0, 0.0], "reachable": true, "collision_free": true }
 ```
 
-**Initiated:** once nl-command has successfully resolved a `TargetPose`.
+**Initiated:** nl-command has resolved a `TargetPose` from the LLM and forwards it to motion-planner.
 
-**Concluded:** motion-planner returns a `PlanResponse`.
+**Concluded:** motion-planner returns a `PlanResponse` (including `reachable=false` or `collision_free=false` for invalid targets — still HTTP 200).
 
-**Error modes:** owned by motion-planner (Ariq's contract rows) — e.g. `reachable: false` for out-of-range targets.
+**Error modes:** target out of arm's reach → `reachable=false` (HTTP 200, negative answer not an error). Target causes self-collision → `collision_free=false` (HTTP 200). Malformed body → HTTP 422.
 
 ---
 
@@ -96,13 +96,15 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+Request: {"joints": [0.32, 1.54, -1.47, 3.08, 0.0, 0.0]}
+Response: {"accepted": true}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** motion-planner has produced a valid plan (reachable=true, collision_free=true) and forwards joints to dispatcher
 
-**Concluded:** _tbd_
+**Concluded:** dispatcher acknowledges receipt with accepted=true
 
-**Error modes:** _tbd_
+**Error modes:** motion-planner does not call dispatcher if reachable=false or collision_free=false — invalid plans stop here and are never forwarded
 
 ---
 
