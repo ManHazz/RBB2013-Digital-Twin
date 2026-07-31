@@ -29,7 +29,7 @@ source venv/bin/activate            # Windows: venv\Scripts\activate
    [paste the contents of services/shared/schemas.py here]
    ```
 
-2. **Paste the task block** (e.g. "Bento-01" — the whole thing including *Do exactly this*, *Done when*, *Push*).
+2. **Paste the task block** (e.g. "Hazieq-01" — the whole thing including *Do exactly this*, *Done when*, *Push*).
 
 3. **Add this instruction at the end of your chat message:**
 
@@ -133,68 +133,68 @@ git push
 **Do exactly this:** Open a GitHub PR from `feat/integration` → `main` titled "Sprint 1 — integration + contract". In the PR body, link the other teammates' PRs. Do not merge yet — wait for group merge day.
 **Push:**
 ```bash
-gh pr create --title "Sprint 1 — integration + contract" --body "See linked PRs from Bento, Ariq, Ibrohim, Raziq. Group merge on sprint-1 tag day."
+gh pr create --title "Sprint 1 — integration + contract" --body "See linked PRs from Hazieq, Ariq, Ibrohim, Raziq. Group merge on sprint-1 tag day."
 ```
 
 ---
 
-## Bento (NL Command) — branch `feat/nl-command`
+## Hazieq (NL Command) — branch `feat/nl-command`
 
-### ☐ Bento-01 — Scaffold nl_command service
+### ☐ Hazieq-01 — Scaffold nl_command service
 **Preconditions:** A-02 done (schemas exist)
 **Do exactly this:** Create `services/nl_command/app.py`, `services/nl_command/Dockerfile`, `services/nl_command/requirements.txt`.
 - `requirements.txt`: `fastapi`, `uvicorn`, `httpx`, `pydantic>=2`
-- `app.py`: a FastAPI app that imports `CommandRequest`, `TargetPose` from `services.shared.schemas` and defines `POST /command` returning a hardcoded `TargetPose(x=0, y=0, z=0)` for now (real Ollama call in Bento-02).
+- `app.py`: a FastAPI app that imports `CommandRequest`, `TargetPose` from `services.shared.schemas` and defines `POST /command` returning a hardcoded `TargetPose(x=0, y=0, z=0)` for now (real Ollama call in Hazieq-02).
 - `Dockerfile`: `python:3.11-slim`, copy requirements, `pip install`, copy code, `CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8010"]`.
 **Done when:** `docker build -t nl-command services/nl_command/` succeeds and `uvicorn` starts locally.
 **Push:**
 ```bash
 git checkout -b feat/nl-command
 git add services/nl_command/
-git commit -m "Bento-01: scaffold nl_command FastAPI service"
+git commit -m "Hazieq-01: scaffold nl_command FastAPI service"
 git push -u origin feat/nl-command
 ```
 
-### ☐ Bento-02 — Wire Ollama call
-**Preconditions:** Bento-01 done
+### ☐ Hazieq-02 — Wire Ollama call
+**Preconditions:** Hazieq-01 done
 **Do exactly this:** In `services/nl_command/app.py`, replace the hardcoded pose with an `httpx.AsyncClient` call to `POST http://{OLLAMA_HOST}/api/generate` (env var `OLLAMA_HOST`, default `host.docker.internal:11434`). Parse the completion into a `TargetPose`. If the completion cannot be parsed into 3 floats, raise `HTTPException(422, "cannot parse pose from LLM response")`. Reuse the parsing logic from the original `llm_controller.py` if applicable.
 **Done when:** hitting `POST /command` with `{"text":"pick up the block"}` returns a valid `TargetPose`.
 **Push:**
 ```bash
 git add services/nl_command/app.py
-git commit -m "Bento-02: wire Ollama call in POST /command"
+git commit -m "Hazieq-02: wire Ollama call in POST /command"
 git push
 ```
 
-### ☐ Bento-03 — Unit test: happy path
-**Preconditions:** Bento-02 done
+### ☐ Hazieq-03 — Unit test: happy path
+**Preconditions:** Hazieq-02 done
 **Do exactly this:** Create `tests/unit/test_nl_command.py`. Use `pytest` + `httpx.MockTransport` (or `respx`) to stub Ollama's response as `"1.0 2.0 3.0"`. Assert `POST /command` with `{"text":"go here"}` returns HTTP 200 and `{"x":1.0,"y":2.0,"z":3.0}`.
 **Done when:** `pytest tests/unit/test_nl_command.py::test_happy_path` passes.
 **Push:**
 ```bash
 git add tests/unit/test_nl_command.py
-git commit -m "Bento-03: unit test — nl_command happy path"
+git commit -m "Hazieq-03: unit test — nl_command happy path"
 git push
 ```
 
-### ☐ Bento-04 — Unit test: fail case
-**Preconditions:** Bento-03 done
+### ☐ Hazieq-04 — Unit test: fail case
+**Preconditions:** Hazieq-03 done
 **Do exactly this:** In the same test file, add `test_empty_text_returns_422` (input `{"text":""}` → HTTP 422) and `test_garbled_ollama_returns_422` (Ollama returns `"gibberish nonsense"` → HTTP 422).
 **Done when:** both fail-case tests pass.
 **Push:**
 ```bash
 git add tests/unit/test_nl_command.py
-git commit -m "Bento-04: unit test — nl_command fail cases (empty, garbled)"
+git commit -m "Hazieq-04: unit test — nl_command fail cases (empty, garbled)"
 git push
 ```
 
-### ☐ Bento-05 — Fill contract rows
-**Preconditions:** A-03 done, Bento-02 done
+### ☐ Hazieq-05 — Fill contract rows
+**Preconditions:** A-03 done, Hazieq-02 done
 **Do exactly this:** In `contracts/interface-contracts.md`, fill in the three sections owned by nl-command: `## client → nl-command`, `## nl-command → ollama`, `## nl-command → motion-planner`. Each section: payload example (real JSON), when initiated, when concluded, error modes.
 **Push:**
 ```bash
 git add contracts/interface-contracts.md
-git commit -m "Bento-05: fill nl-command contract rows"
+git commit -m "Hazieq-05: fill nl-command contract rows"
 git push
 ```
 
@@ -439,7 +439,7 @@ When every task above is checked off:
 
 ## Ground rules for sprint 2
 
-- **Same branch as sprint-1** (don't create new branches). Ariq stays on `feat/motion-planner`, Bento on `feat/nl-command`, etc.
+- **Same branch as sprint-1** (don't create new branches). Ariq stays on `feat/motion-planner`, Hazieq on `feat/nl-command`, etc.
 - **Merge `origin/feat/integration` into your branch BEFORE starting**, so you're building on top of the sprint-1 group-merge state:
   ```bash
   git checkout <your-branch>
@@ -495,40 +495,40 @@ git push --tags
 
 ---
 
-## Bento — branch `feat/nl-command`
+## Hazieq — branch `feat/nl-command`
 
-### ☐ Bento-06 — Integration test: nl-command → motion-planner
+### ☐ Hazieq-06 — Integration test: nl-command → motion-planner
 **Preconditions:** sprint-1 group merge pulled into your branch
 **Do exactly this:** Save the file Aiman sent you as `tests/integration/test_nl_to_planner.py`. It stubs Ollama with a fake completion, POSTs `/command`, feeds the returned `TargetPose` into motion-planner's `/plan`, asserts the contract holds end-to-end.
 **Done when:** `PYTHONPATH=. pytest tests/integration/test_nl_to_planner.py -v` passes.
 **Push:**
 ```bash
 git add tests/integration/test_nl_to_planner.py
-git commit -m "Bento-06: integration test — nl-command → motion-planner contract"
+git commit -m "Hazieq-06: integration test — nl-command → motion-planner contract"
 git push
 ```
 
-### ☐ Bento-07 — CI pipeline
-**Preconditions:** Bento-06 done
+### ☐ Hazieq-07 — CI pipeline
+**Preconditions:** Hazieq-06 done
 **Do exactly this:** Save the file Aiman sent as `.github/workflows/ci.yml`. Four jobs: lint (ruff) → unit → integration (with timescale/redis/mosquitto service containers) → regression (golden IK).
 **Done when:** file committed and pushed; the resulting Actions run appears on GitHub (green or red, both prove CI fired).
 **Push:**
 ```bash
 mkdir -p .github/workflows
 git add .github/workflows/ci.yml
-git commit -m "Bento-07: CI pipeline — lint, unit, integration, regression"
+git commit -m "Hazieq-07: CI pipeline — lint, unit, integration, regression"
 git push
 ```
 
-### ☐ Bento-08 — Regression suite (golden IK cases)
-**Preconditions:** Bento-07 done
+### ☐ Hazieq-08 — Regression suite (golden IK cases)
+**Preconditions:** Hazieq-07 done
 **Do exactly this:** Save the file Aiman sent as `tests/regression/test_golden_ik.py`. Fixed target→(reachable, collision_free) pairs — CI fails if IK output drifts.
 **Done when:** `PYTHONPATH=. pytest tests/regression -v` passes; the `regression` job on CI passes.
 **Push:**
 ```bash
 mkdir -p tests/regression
 git add tests/regression/test_golden_ik.py
-git commit -m "Bento-08: regression suite — golden IK targets"
+git commit -m "Hazieq-08: regression suite — golden IK targets"
 git push
 ```
 

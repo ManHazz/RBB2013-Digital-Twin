@@ -1,131 +1,139 @@
-# XLeRobot Digital Twin — Visualization
+# Visualization — XLeRobot Digital Twin
 
-**Rubric:** Project Visualization (5%) — *"Create a visualization that is appropriate and reflects the digital twin problem that you have chosen. Demonstrate its function."*
+**Course:** RBB2013 Digital Twin (May 2026)
+**Rubric:** Project Visualization (5%)
+**Repository:** https://github.com/ManHazz/RBB2013-Digital-Twin
 
-The digital twin has two complementary visualizations, each showing a different facet of the same underlying state.
+**Team members:**
+
+| Name | Student ID |
+|------|------------|
+| Muhammad Aiman bin Ahmad Hazimin | 22011708 |
+| Hazieq Danial bin Roshihan Annuar | 24006633 |
+| Muhammad Raziq bin Sufian | 24006626 |
+| Ibrohim bin Ahmad Jaafar Sadzik | 24006396 |
+| Ariq Danish bin Nor Razak | 24006796 |
 
 ---
 
-## 1. Omniverse Kit viewport — the "physical twin" view
+## 1. What we visualise and why
 
-**What it shows:** the 3D digital twin of the robot arm, its target, and its obstacles, rendered in real time from live joint state.
+The digital twin has two audiences and two questions:
 
-**Why it reflects the problem:** the whole point of a digital twin is to let a human see the physical system's current pose without being next to it. This viewport is that.
+1. **The operator**, who wants to see the robot arm move right now — "did it do what I told it?"
+2. **The engineer looking at long-running behaviour** — "how has the arm been doing over the last few minutes?"
 
-**Live behavior:** the arm animates in real time as joint commands stream in from `dispatcher` via ZMQ PUSH on port 5556. When the user issues "pick up the ball", the arm visibly moves through: home → above → grab → lift — each step ~1 second (30 interpolated frames).
+So we built two visualisations, one for each. Both read from the same underlying state store (`SimState` published by sim-bridge, aggregated by telemetry into TimescaleDB and Redis), so they can never disagree about what happened.
 
-**Scene composition** (built by `digitaltwin.xlerobot_extension` at startup):
-- Robot arm — 6 joints (blue spheres), 5 links (grey cylinders), 2-finger gripper (orange).
-- Target ball — small red sphere at `(x=40, y=1.75, z=0)` cm.
-- Two purple obstacle spheres — the arm must avoid these.
-- Grid + coordinate axes.
+---
 
-**Screenshot — Omniverse viewport with robot + scene:**
+## 2. Visualisation 1 — Omniverse Kit viewport
 
-![Omniverse viewport](./screenshots/omniverse_scene.png)
+This is the "physical twin" view. The scene is a 3D rendering of the robot arm, a target ball, and two obstacles, built at extension startup by `digitaltwin.xlerobot_extension`. When the user issues a command, the arm animates in real time as joint commands stream in from the dispatcher over ZMQ.
 
-*(replace with actual screenshot — one already captured, path `~/.claude/image-cache/4b3438b3-4b11-414f-94aa-24a0ea5de642/8.png` from the sim-bridge verification session)*
+**What you see in the scene:**
+- The robot arm — 6 joints (blue spheres), 5 links (grey cylinders), gripper with two orange fingers.
+- A small red target ball at the position defined by `TARGET_BALL` in the extension.
+- Two purple obstacle spheres the arm has to avoid.
+- Coordinate axes: Y up (green), X red, Z blue.
 
-**Demonstration commands:**
+**Live behaviour:** each command from the LLM triggers 30 interpolated frames at 30 fps, pushed to the sim over ZMQ PUSH/PULL. The arm's motion is not scripted — it comes from the IK solver in `motion-planner`.
+
+**Screenshot — the arm after we asked it to pick up the ball:**
+
+![Arm reaching the target](./screenshots/omniverse_arm_reaching.png)
+
+The gripper (yellow-orange fingers on the right of the image) ends up close to the red target ball at the bottom. Not perfectly on the ball because the IK returned one valid solution out of many, but visibly moving toward the correct side after the coordinate-frame fix we applied in sprint 2 (see [`SPRINT_LOG.md`](./SPRINT_LOG.md) — "Kit rotation convention" bug).
+
+---
+
+## 3. Visualisation 2 — Grafana dashboard
+
+This is the "data twin" view. Sourced live from TimescaleDB via a Postgres data source we auto-provision from `infra/grafana/provisioning/`. The dashboard is called **XLeRobot — Robot Twin Live View** and it has three panels.
+
+### Panel 1: Gripper position (cm)
+
+Three lines on one chart — Reach (forward from the base), Height (vertical), Lateral (side). All in cm. Reflects the end-effector position over time.
+
+We chose "Reach / Height / Lateral" instead of X/Y/Z on purpose — a marker who isn't a robotics specialist can still read the panel without knowing which axis is which.
+
+### Panel 2: Shoulder rotation (rad)
+
+Just the base joint's angle in radians. 0 rad = straight ahead. This is the joint that changes most when the arm moves — good visual indicator that something is happening.
+
+### Panel 3: Pipeline health
+
+A big coloured status word instead of a raw count. We tried showing the row count first ("Live updates in the last 5 minutes") but during the demo it wasn't clear what a good number was. So we switched to three states:
+
+| State | Trigger | Meaning |
+|-------|---------|---------|
+| **HEALTHY** (green) | ≥300 state messages in the last minute | Sim publishing normally (600/min at 10 Hz) |
+| **DEGRADED** (orange) | 1–299 messages in the last minute | Partial flow — sim just started or slowing |
+| **DOWN** (red) | 0 messages in the last minute | Pipeline idle — sim not publishing |
+
+This gives the marker a one-glance answer to "is this thing working?"
+
+**Screenshot — dashboard with the pipeline running:**
+
+![Grafana healthy](./screenshots/grafana_dashboard_healthy.png)
+
+**Screenshot — the same dashboard after we killed the sim (the health panel flips within a minute):**
+
+![Grafana DOWN](./screenshots/grafana_health_down.png)
+
+That second screenshot actually matters more than the first — it proves the visualisation is genuinely live and not caching an old value.
+
+---
+
+## 4. What "success" looks like on the visualisations
+
+Two things the marker can check without needing us to explain anything:
+
+**On the Omniverse side:** does the arm move toward the target when we send a command? Yes — visible in the screenshot in §2.
+
+**On the Grafana side:** does the Pipeline health show HEALTHY while a run is active? And does it reflect the arm's motion? Yes — the Reach trace climbs to ~40 cm (the ball's forward distance) after each `pick up the ball` command.
+
+---
+
+## 5. Why two visualisations instead of one
+
+We considered embedding the Grafana panels inside Omniverse or building a custom Streamlit page that combines both. We didn't, for two reasons:
+
+1. **Different audiences.** The operator watching the arm move doesn't want a timeseries panel in their face. The engineer watching for outliers doesn't need a 3D render.
+2. **Grafana already exists and is battle-tested.** Auto-provisioning a Postgres data source + a dashboard JSON gives us the whole thing in ~50 lines of YAML.
+
+Omniverse is the sim itself, so the viewport IS the visualisation — no separate UI needed.
+
+---
+
+## 6. How to reproduce
+
+Both visualisations come up automatically with `docker compose up -d` + running Kit locally:
 
 ```bash
-# 1. Launch Kit with the extension enabled
-cd kit-app-template && ./repo.sh launch
-# → wait for "[RobotArm] cmd PULL :5556  state PUB :5557" in the terminal
-# → wait for "[RobotArm] scene: target + 2 obstacles built"
-# → viewport shows the scene
-
-# 2. In another terminal, bring up the compose stack
+# Full compose stack (Timescale, Redis, Mosquitto, Grafana, all 5 services)
 docker compose -f infra/docker-compose.yml up -d
 
-# 3. Send a command
+# Omniverse Kit with our extension enabled
+cd kit-app-template && ./repo.sh launch
+
+# Grafana at http://localhost:3001 (admin / admin)
+# Dashboard: "XLeRobot — Robot Twin Live View"
+
+# Send a command
 curl -X POST http://localhost:8010/command \
      -H 'content-type: application/json' \
-     -d '{"text": "pick up the ball"}'
-
-# 4. Watch the Omniverse viewport — the arm animates
+     -d '{"text":"pick up the ball"}'
 ```
 
----
-
-## 2. Grafana dashboard `XLeRobot — Robot State` — the "data twin" view
-
-**What it shows:** a time-series projection of the digital twin's state, sourced live from TimescaleDB.
-
-**Why it reflects the problem:** the physical view shows *now*; this view shows *over time* — trajectories, patterns, whether a run actually completed, whether the arm reached where it was told to. It also proves the streaming aggregation pipeline is working (rows keep coming in).
-
-**Panels:**
-
-| # | Panel | Data | Update rate |
-|---|-------|------|-------------|
-| 1 | **End-effector position (x, y, z)** | `SELECT ts AS time, ee_x, ee_y, ee_z FROM robot_state WHERE $__timeFilter(ts)` | 5 s (auto-refresh) |
-| 2 | **Joint 0 (shoulder rotation)** | `SELECT ts AS time, joints[1] AS j0 FROM robot_state WHERE $__timeFilter(ts)` | 5 s |
-| 3 | **Rows in last 5 minutes** (stat) | `SELECT count(*) FROM robot_state WHERE ts > now() - interval '5 minutes'` | 5 s |
-
-**Screenshot — Grafana dashboard with a run in progress:**
-
-![Grafana dashboard](./screenshots/grafana_dashboard.png)
-
-*(placeholder — capture after Raziq-08 lands and a run completes)*
-
-**Access:**
-
-```bash
-# After docker compose up -d
-# Browse to http://localhost:3000
-# Login: admin / admin  (defined in docker-compose.yml env)
-# Dashboard is auto-provisioned via infra/grafana/provisioning/
-# Direct URL: http://localhost:3000/d/xlerobot-robot-state
-```
+Full end-to-end demo script in [`docs/DEMO.md`](./DEMO.md).
 
 ---
 
-## 3. Measure of success — visible on the visualizations
+## 7. Notes on design decisions
 
-Two things a marker can verify at a glance:
+**Why colour the health panel background, not just the text?** With the background coloured, the status is readable from across the room. During a live demo the marker doesn't have to squint.
 
-### 3.1 The arm reaches the target (Omniverse)
-After a "pick up the ball" command, the gripper visually touches the red ball. If IK failed (unreachable) or collision was detected, the arm does not move for that step — visible failure, no false success.
+**Why 1-minute window for the health check, not 5?** 1 minute flips faster when something breaks. During the demo we killed the sim and the panel went DOWN within ~15 seconds — that's a much better story than "wait 5 minutes and check again."
 
-### 3.2 The pipeline delivers data (Grafana)
-The end-effector trace converges on the ball coordinates `(40, 1.75, 0)` cm. The row-count stat is strictly increasing throughout a run — proving continuous streaming + aggregation into persistent storage.
-
-**Screenshot showing both success measures:**
-
-![Success proof](./screenshots/success_proof.png)
-
-*(placeholder — capture with Omniverse and Grafana side by side after a run completes)*
-
----
-
-## 4. Persistence visualization
-
-**Bonus proof:** the same Grafana traces are visible *before and after* `docker compose restart timescaledb redis` — see `docs/PERSISTENCE_PROOF.md`. The data doesn't disappear when containers restart. Named volumes prove state persistence.
-
----
-
-## 5. Design decisions
-
-**Why two visualizations rather than one?**
-- Omniverse: reflects the *simulation* aspect of the digital twin. Good for "did the arm do what I said?"
-- Grafana: reflects the *observability* aspect of the digital twin. Good for "what happened during the last 100 runs?" and "is the pipeline healthy right now?"
-
-**Why not Streamlit / custom UI?**
-- Grafana is battle-tested for time-series and gets auto-provisioned via YAML — zero clicks to set up on a fresh deployment.
-- Omniverse is the sim itself — no separate UI needed. The viewport IS the visualization.
-
-**Why not embed Grafana into Omniverse?**
-- Different audiences. The operator commanding the robot lives in Omniverse; the reliability engineer watching for outliers lives in Grafana. Keeping them separate keeps each tool doing what it's best at.
-
----
-
-## 6. Screenshots checklist for final submission
-
-- [ ] `screenshots/omniverse_scene.png` — Omniverse viewport at startup, showing robot arm + target + obstacles.
-- [ ] `screenshots/omniverse_after_command.png` — Omniverse viewport after "pick up the ball", showing gripper touching the ball.
-- [ ] `screenshots/grafana_dashboard.png` — Grafana dashboard mid-run with all 3 panels populated.
-- [ ] `screenshots/grafana_ee_trace_convergence.png` — zoomed panel showing ee_x/ee_y/ee_z converging on target coordinates.
-- [ ] `screenshots/grafana_row_count.png` — the row-count stat showing continuous data ingestion.
-- [ ] `screenshots/persistence_before.png` and `screenshots/persistence_after.png` — same panel before and after `docker compose restart`, showing continuity.
-
-Save all screenshots under `docs/screenshots/`. Reference them from this file with relative paths.
+**Why keep the raw joint plot?** We only plot joint 0 (shoulder), not all six, to keep the dashboard uncluttered. If a marker asks about the others, all 6 are in the underlying data as a Postgres array — one query rewrite would show them all.

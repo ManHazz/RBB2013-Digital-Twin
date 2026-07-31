@@ -1,7 +1,7 @@
 # XLeRobot Digital Twin — Specification & Plan
 
 **Course:** RBB2013 Digital Twin (May 2026)
-**Team:** Aiman (lead), Bento, Ariq, Ibrohim, Raziq
+**Team:** Aiman (lead), Hazieq, Ariq, Ibrohim, Raziq
 **Rubric:** Project Specification & Plan (5%)
 
 ---

@@ -156,4 +156,4 @@ tests/
 └── regression/   — golden IK cases, run on every CI push, fails if math drifts
 ```
 
-CI in `.github/workflows/ci.yml` (Bento-07): `lint → unit → integration → regression`. Every push. See rubric coverage in `docs/SPECIFICATION.md §8`.
+CI in `.github/workflows/ci.yml` (Hazieq-07): `lint → unit → integration → regression`. Every push. See rubric coverage in `docs/SPECIFICATION.md §8`.
