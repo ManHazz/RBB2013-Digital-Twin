@@ -51,7 +51,7 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT count(*)::float AS value FROM robot_state WHERE ts > now() - interval '1 minute'",
+          "rawSql": "SELECT count(*)::float AS \" \" FROM robot_state WHERE ts > now() - interval '1 minute'",
           "format": "table"
         }
       ],
@@ -60,7 +60,7 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "fieldConfig": {
         "defaults": {
