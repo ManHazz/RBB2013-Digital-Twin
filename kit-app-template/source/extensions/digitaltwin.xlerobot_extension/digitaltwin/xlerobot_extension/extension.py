@@ -278,9 +278,18 @@ class RobotArmExt(omni.ext.IExt):
             pass
 
         if latest is not None:
-            for k in ("j0", "j1", "j2", "j3", "j4", "j5"):
-                if k in latest:
-                    self._angles[k] = float(latest[k])
+            # Accept both wire formats:
+            #  - contract shape  {"joints": [j0..j5], "frame_id": i}  (dispatcher)
+            #  - legacy shape    {"j0": ..., "j5": ...}               (older callers)
+            if "joints" in latest and isinstance(latest["joints"], list):
+                arr = latest["joints"]
+                for i, k in enumerate(("j0", "j1", "j2", "j3", "j4", "j5")):
+                    if i < len(arr):
+                        self._angles[k] = float(arr[i])
+            else:
+                for k in ("j0", "j1", "j2", "j3", "j4", "j5"):
+                    if k in latest:
+                        self._angles[k] = float(latest[k])
             apply_joint_angles(self._prims, self._angles)
 
         # 2) publish state at ~10 Hz

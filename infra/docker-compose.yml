@@ -12,7 +12,10 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: robot
-    ports: ["5432:5432"]
+    # No host port bind — accessed via compose network only. `docker compose
+    # exec timescaledb ...` for interactive use. (Prevents collisions with a
+    # host-side Postgres such as pgvector.)
+    expose: ["5432"]
     volumes:
       - timescaledb-data:/var/lib/postgresql/data
       - ./timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -25,19 +28,21 @@ services:
   redis:
     image: redis:7
     command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
-    ports: ["6379:6379"]
+    expose: ["6379"]
     volumes:
       - redis-data:/data
 
   mosquitto:
     image: eclipse-mosquitto:2
-    ports: ["1883:1883"]
+    expose: ["1883"]
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 
   grafana:
     image: grafana/grafana:10.4.0
-    ports: ["3000:3000"]
+    # 3001 on host (3000 often taken by other dev tools). Grafana still runs
+    # on 3000 inside the container; the mapping is host:container.
+    ports: ["3001:3000"]
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
@@ -81,9 +86,12 @@ services:
     build:
       context: ..
       dockerfile: services/dispatcher/Dockerfile
-    ports: ["8030:8030", "5556:5556"]
+    ports: ["8030:8030"]
     environment:
       ACTUATION_URL: http://actuation:8040/actuate
+      SIM_BRIDGE_ADDR: tcp://host.docker.internal:5556
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   actuation:
     build:
