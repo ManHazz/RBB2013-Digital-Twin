@@ -100,10 +100,22 @@ def _normalize_from_sim(raw: dict) -> SimState:
     return SimState(joints=joints, ee_pose=ee_pose, ts=ts)
 
 
+def _connect_pg() -> psycopg.Connection:
+    return psycopg.connect(PG_DSN)
+
+
+def _connect_redis() -> "redis_lib.Redis":
+    return redis_lib.Redis.from_url(REDIS_URL)
+
+
 def run() -> None:
-    """Daemon loop: SUB on sim-bridge state, write to Timescale + Redis."""
-    conn = psycopg.connect(PG_DSN)
-    redis_client = redis_lib.Redis.from_url(REDIS_URL)
+    """Daemon loop: SUB on sim-bridge state, write to Timescale + Redis.
+
+    Reconnects to Postgres or Redis on any error — so that restarting the
+    DB or cache (e.g. during a persistence-proof demo) does not silently
+    kill the telemetry daemon."""
+    conn = _connect_pg()
+    redis_client = _connect_redis()
 
     ctx = zmq.Context()
     sub = ctx.socket(zmq.SUB)
@@ -116,8 +128,22 @@ def run() -> None:
         try:
             raw = sub.recv_json()
             state = _normalize_from_sim(raw)
-            insert_state(conn, state)
-            set_latest_state(redis_client, state)
+            try:
+                insert_state(conn, state)
+            except (psycopg.OperationalError, psycopg.InterfaceError):
+                print("[telemetry] Postgres connection lost, reconnecting")
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+                conn = _connect_pg()
+                insert_state(conn, state)
+            try:
+                set_latest_state(redis_client, state)
+            except redis_lib.ConnectionError:
+                print("[telemetry] Redis connection lost, reconnecting")
+                redis_client = _connect_redis()
+                set_latest_state(redis_client, state)
         except Exception as exc:  # noqa: BLE001 - daemon must survive one bad message
             print(f"[telemetry] error processing message: {exc}")
             continue
