@@ -27,13 +27,19 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+// request
+{ "text": "pick up the ball" }
+// response (200)
+{ "x": 40.0, "y": 13.75, "z": 0.0 }
 ```
 
-**Initiated:** _tbd_
+**Initiated:** user submits a text instruction.
 
-**Concluded:** _tbd_
+**Concluded:** a `TargetPose` is returned to the caller.
 
-**Error modes:** _tbd_
+**Error modes:**
+- `422` — empty text, LLM's plan could not be parsed as JSON, or the plan resolved to only "home" steps (no movement target).
+- `502` — Ollama unreachable or returned an HTTP error.
 
 ---
 
@@ -43,13 +49,24 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+// request
+{
+  "model": "qwen2.5:3b",
+  "prompt": "/no_think\nCommand: pick up the ball",
+  "system": "<SYSTEM_PROMPT — see app.py>",
+  "stream": false
+}
+// response
+{ "response": "[{\"action\":\"above\",\"wait\":1.0},{\"action\":\"grab\",\"wait\":1.0}]" }
 ```
 
-**Initiated:** _tbd_
+**Initiated:** on every `/command` call, after validating the input text is non-empty.
 
-**Concluded:** _tbd_
+**Concluded:** Ollama returns a completion string containing a JSON array of action steps, which nl-command parses and converts to an `(x, y, z)` target via `action_target()`.
 
-**Error modes:** _tbd_
+**Note:** nl-command has no live scene socket (unlike the original `llm_controller.py`), so it resolves targets against a fixed `FALLBACK_TARGET` rather than live obstacle/ball positions.
+
+**Error modes:** connection/timeout to Ollama surfaces as `502` back to the client.
 
 ---
 
@@ -59,13 +76,17 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+// request
+{ "target": { "x": 40.0, "y": 13.75, "z": 0.0 } }
+// response
+{ "joints": [0,0,0,0,0,0], "reachable": true, "collision_free": true }
 ```
 
-**Initiated:** _tbd_
+**Initiated:** once nl-command has successfully resolved a `TargetPose`.
 
-**Concluded:** _tbd_
+**Concluded:** motion-planner returns a `PlanResponse`.
 
-**Error modes:** _tbd_
+**Error modes:** owned by motion-planner (Ariq's contract rows) — e.g. `reachable: false` for out-of-range targets.
 
 ---
 
