@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Visualization — XLeRobot Digital Twin</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+  }
+  @media print {
+    html, body {
+      width: 210mm;
+      max-width: 210mm;
+      background: white;
+    }
+    body {
+      font-size: 10.5pt;
+      line-height: 1.45;
+    }
+    /* prevent code + tables overflowing right edge */
+    pre, code {
+      white-space: pre-wrap !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      font-size: 9pt !important;
+    }
+    table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      font-size: 9pt !important;
+      border-collapse: collapse;
+    }
+    td, th {
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      max-width: 100% !important;
+      padding: 4px 6px !important;
+      vertical-align: top;
+    }
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+      page-break-inside: avoid;
+    }
+    h1, h2, h3, h4 {
+      page-break-after: avoid;
+    }
+    .jp-Cell, .cell, .jp-CodeCell {
+      page-break-inside: avoid;
+    }
+    /* Jupyter notebook wrappers */
+    .jp-InputArea-editor, .jp-OutputArea-output, .highlight, .input_area {
+      max-width: 100% !important;
+      overflow: hidden !important;
+    }
+    /* Long link URLs shouldn't blow out the layout */
+    a {
+      word-break: break-all;
+    }
+  }
+  /* apply to screen too so print-preview shows the same */
+  pre, code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100%;
+  }
+  table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: auto;
+    word-wrap: break-word;
+    border-collapse: collapse;
+  }
+  td, th {
+    word-wrap: break-word;
+    padding: 6px 8px;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 210mm;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    color: #222;
+  }
+  h1, h2, h3, h4 { color: #111; }
+  h1 { border-bottom: 2px solid #ccc; padding-bottom: 0.3em; }
+  h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.2em; margin-top: 2em; }
+  table { border: 1px solid #ccc; }
+  th { background: #f5f5f5; text-align: left; }
+  td, th { border: 1px solid #ddd; }
+  code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+  pre { background: #f4f4f4; padding: 8px 12px; border-radius: 4px; border: 1px solid #e0e0e0; }
+  pre code { background: transparent; padding: 0; }
+  img { border: 1px solid #eee; margin: 8px 0; }
+  blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 1em; color: #555; }
+</style>
+</head>
+<body>
+<h1 id="visualization-xlerobot-digital-twin">Visualization — XLeRobot Digital Twin</h1>
+<p><strong>Course:</strong> RBB2013 Digital Twin (May 2026)
+<strong>Rubric:</strong> Project Visualization (5%)
+<strong>Repository:</strong> https://github.com/ManHazz/RBB2013-Digital-Twin</p>
+<p><strong>Team members:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Student ID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Muhammad Aiman bin Ahmad Hazimin</td>
+<td>22011708</td>
+</tr>
+<tr>
+<td>Hazieq Danial bin Roshihan Annuar</td>
+<td>24006633</td>
+</tr>
+<tr>
+<td>Muhammad Raziq bin Sufian</td>
+<td>24006626</td>
+</tr>
+<tr>
+<td>Ibrohim bin Ahmad Jaafar Sadzik</td>
+<td>24006396</td>
+</tr>
+<tr>
+<td>Ariq Danish bin Nor Razak</td>
+<td>24006796</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-what-we-visualise-and-why">1. What we visualise and why</h2>
+<p>The digital twin has two audiences and two questions:</p>
+<ol>
+<li><strong>The operator</strong>, who wants to see the robot arm move right now — "did it do what I told it?"</li>
+<li><strong>The engineer looking at long-running behaviour</strong> — "how has the arm been doing over the last few minutes?"</li>
+</ol>
+<p>So we built two visualisations, one for each. Both read from the same underlying state store (<code>SimState</code> published by sim-bridge, aggregated by telemetry into TimescaleDB and Redis), so they can never disagree about what happened.</p>
+<hr />
+<h2 id="2-visualisation-1-omniverse-kit-viewport">2. Visualisation 1 — Omniverse Kit viewport</h2>
+<p>This is the "physical twin" view. The scene is a 3D rendering of the robot arm, a target ball, and two obstacles, built at extension startup by <code>digitaltwin.xlerobot_extension</code>. When the user issues a command, the arm animates in real time as joint commands stream in from the dispatcher over ZMQ.</p>
+<p><strong>What you see in the scene:</strong>
+- The robot arm — 6 joints (blue spheres), 5 links (grey cylinders), gripper with two orange fingers.
+- A small red target ball at the position defined by <code>TARGET_BALL</code> in the extension.
+- Two purple obstacle spheres the arm has to avoid.
+- Coordinate axes: Y up (green), X red, Z blue.</p>
+<p><strong>Live behaviour:</strong> each command from the LLM triggers 30 interpolated frames at 30 fps, pushed to the sim over ZMQ PUSH/PULL. The arm's motion is not scripted — it comes from the IK solver in <code>motion-planner</code>.</p>
+<p><strong>Screenshot — the arm after we asked it to pick up the ball:</strong></p>
+<p><img alt="Arm reaching the target" src="./screenshots/omniverse_arm_reaching.png" /></p>
+<p>The gripper (yellow-orange fingers on the right of the image) ends up close to the red target ball at the bottom. Not perfectly on the ball because the IK returned one valid solution out of many, but visibly moving toward the correct side after the coordinate-frame fix we applied in sprint 2 (see <a href="./SPRINT_LOG.md"><code>SPRINT_LOG.md</code></a> — "Kit rotation convention" bug).</p>
+<hr />
+<h2 id="3-visualisation-2-grafana-dashboard">3. Visualisation 2 — Grafana dashboard</h2>
+<p>This is the "data twin" view. Sourced live from TimescaleDB via a Postgres data source we auto-provision from <code>infra/grafana/provisioning/</code>. The dashboard is called <strong>XLeRobot — Robot Twin Live View</strong> and it has three panels.</p>
+<h3 id="panel-1-gripper-position-cm">Panel 1: Gripper position (cm)</h3>
+<p>Three lines on one chart — Reach (forward from the base), Height (vertical), Lateral (side). All in cm. Reflects the end-effector position over time.</p>
+<p>We chose "Reach / Height / Lateral" instead of X/Y/Z on purpose — a marker who isn't a robotics specialist can still read the panel without knowing which axis is which.</p>
+<h3 id="panel-2-shoulder-rotation-rad">Panel 2: Shoulder rotation (rad)</h3>
+<p>Just the base joint's angle in radians. 0 rad = straight ahead. This is the joint that changes most when the arm moves — good visual indicator that something is happening.</p>
+<h3 id="panel-3-pipeline-health">Panel 3: Pipeline health</h3>
+<p>A big coloured status word instead of a raw count. We tried showing the row count first ("Live updates in the last 5 minutes") but during the demo it wasn't clear what a good number was. So we switched to three states:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Trigger</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HEALTHY</strong> (green)</td>
+<td>≥300 state messages in the last minute</td>
+<td>Sim publishing normally (600/min at 10 Hz)</td>
+</tr>
+<tr>
+<td><strong>DEGRADED</strong> (orange)</td>
+<td>1–299 messages in the last minute</td>
+<td>Partial flow — sim just started or slowing</td>
+</tr>
+<tr>
+<td><strong>DOWN</strong> (red)</td>
+<td>0 messages in the last minute</td>
+<td>Pipeline idle — sim not publishing</td>
+</tr>
+</tbody>
+</table>
+<p>This gives the marker a one-glance answer to "is this thing working?"</p>
+<p><strong>Screenshot — dashboard with the pipeline running:</strong></p>
+<p><img alt="Grafana healthy" src="./screenshots/grafana_dashboard_healthy.png" /></p>
+<p><strong>Screenshot — the same dashboard after we killed the sim (the health panel flips within a minute):</strong></p>
+<p><img alt="Grafana DOWN" src="./screenshots/grafana_health_down.png" /></p>
+<p>That second screenshot actually matters more than the first — it proves the visualisation is genuinely live and not caching an old value.</p>
+<hr />
+<h2 id="4-what-success-looks-like-on-the-visualisations">4. What "success" looks like on the visualisations</h2>
+<p>Two things the marker can check without needing us to explain anything:</p>
+<p><strong>On the Omniverse side:</strong> does the arm move toward the target when we send a command? Yes — visible in the screenshot in §2.</p>
+<p><strong>On the Grafana side:</strong> does the Pipeline health show HEALTHY while a run is active? And does it reflect the arm's motion? Yes — the Reach trace climbs to ~40 cm (the ball's forward distance) after each <code>pick up the ball</code> command.</p>
+<hr />
+<h2 id="5-why-two-visualisations-instead-of-one">5. Why two visualisations instead of one</h2>
+<p>We considered embedding the Grafana panels inside Omniverse or building a custom Streamlit page that combines both. We didn't, for two reasons:</p>
+<ol>
+<li><strong>Different audiences.</strong> The operator watching the arm move doesn't want a timeseries panel in their face. The engineer watching for outliers doesn't need a 3D render.</li>
+<li><strong>Grafana already exists and is battle-tested.</strong> Auto-provisioning a Postgres data source + a dashboard JSON gives us the whole thing in ~50 lines of YAML.</li>
+</ol>
+<p>Omniverse is the sim itself, so the viewport IS the visualisation — no separate UI needed.</p>
+<hr />
+<h2 id="6-how-to-reproduce">6. How to reproduce</h2>
+<p>Both visualisations come up automatically with <code>docker compose up -d</code> + running Kit locally:</p>
+<pre><code class="language-bash"># Full compose stack (Timescale, Redis, Mosquitto, Grafana, all 5 services)
+docker compose -f infra/docker-compose.yml up -d
+
+# Omniverse Kit with our extension enabled
+cd kit-app-template &amp;&amp; ./repo.sh launch
+
+# Grafana at http://localhost:3001 (admin / admin)
+# Dashboard: &quot;XLeRobot — Robot Twin Live View&quot;
+
+# Send a command
+curl -X POST http://localhost:8010/command \
+     -H 'content-type: application/json' \
+     -d '{&quot;text&quot;:&quot;pick up the ball&quot;}'
+</code></pre>
+<p>Full end-to-end demo script in <a href="./DEMO.md"><code>docs/DEMO.md</code></a>.</p>
+<hr />
+<h2 id="7-notes-on-design-decisions">7. Notes on design decisions</h2>
+<p><strong>Why colour the health panel background, not just the text?</strong> With the background coloured, the status is readable from across the room. During a live demo the marker doesn't have to squint.</p>
+<p><strong>Why 1-minute window for the health check, not 5?</strong> 1 minute flips faster when something breaks. During the demo we killed the sim and the panel went DOWN within ~15 seconds — that's a much better story than "wait 5 minutes and check again."</p>
+<p><strong>Why keep the raw joint plot?</strong> We only plot joint 0 (shoulder), not all six, to keep the dashboard uncluttered. If a marker asks about the others, all 6 are in the underlying data as a Postgres array — one query rewrite would show them all.</p>
+</body>
+</html>

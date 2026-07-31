@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dev Practices — XLeRobot Digital Twin</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+  }
+  @media print {
+    html, body {
+      width: 210mm;
+      max-width: 210mm;
+      background: white;
+    }
+    body {
+      font-size: 10.5pt;
+      line-height: 1.45;
+    }
+    /* prevent code + tables overflowing right edge */
+    pre, code {
+      white-space: pre-wrap !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      font-size: 9pt !important;
+    }
+    table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      font-size: 9pt !important;
+      border-collapse: collapse;
+    }
+    td, th {
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      max-width: 100% !important;
+      padding: 4px 6px !important;
+      vertical-align: top;
+    }
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+      page-break-inside: avoid;
+    }
+    h1, h2, h3, h4 {
+      page-break-after: avoid;
+    }
+    .jp-Cell, .cell, .jp-CodeCell {
+      page-break-inside: avoid;
+    }
+    /* Jupyter notebook wrappers */
+    .jp-InputArea-editor, .jp-OutputArea-output, .highlight, .input_area {
+      max-width: 100% !important;
+      overflow: hidden !important;
+    }
+    /* Long link URLs shouldn't blow out the layout */
+    a {
+      word-break: break-all;
+    }
+  }
+  /* apply to screen too so print-preview shows the same */
+  pre, code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100%;
+  }
+  table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: auto;
+    word-wrap: break-word;
+    border-collapse: collapse;
+  }
+  td, th {
+    word-wrap: break-word;
+    padding: 6px 8px;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 210mm;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    color: #222;
+  }
+  h1, h2, h3, h4 { color: #111; }
+  h1 { border-bottom: 2px solid #ccc; padding-bottom: 0.3em; }
+  h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.2em; margin-top: 2em; }
+  table { border: 1px solid #ccc; }
+  th { background: #f5f5f5; text-align: left; }
+  td, th { border: 1px solid #ddd; }
+  code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+  pre { background: #f4f4f4; padding: 8px 12px; border-radius: 4px; border: 1px solid #e0e0e0; }
+  pre code { background: transparent; padding: 0; }
+  img { border: 1px solid #eee; margin: 8px 0; }
+  blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 1em; color: #555; }
+</style>
+</head>
+<body>
+<h1 id="development-practices-xlerobot-digital-twin">Development Practices — XLeRobot Digital Twin</h1>
+<p><strong>Course:</strong> RBB2013 Digital Twin (May 2026)
+<strong>Rubric:</strong> Project Development Practices (5%)
+<strong>Repository:</strong> https://github.com/ManHazz/RBB2013-Digital-Twin</p>
+<p><strong>Team members:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Student ID</th>
+<th>Feature branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Muhammad Aiman bin Ahmad Hazimin</td>
+<td>22011708</td>
+<td><code>feat/integration</code> (integrator)</td>
+</tr>
+<tr>
+<td>Hazieq Danial bin Roshihan Annuar</td>
+<td>24006633</td>
+<td><code>feat/nl-command</code></td>
+</tr>
+<tr>
+<td>Muhammad Raziq bin Sufian</td>
+<td>24006626</td>
+<td><code>feat/telemetry-observability</code></td>
+</tr>
+<tr>
+<td>Ibrohim bin Ahmad Jaafar Sadzik</td>
+<td>24006396</td>
+<td><code>feat/dispatcher-actuation</code></td>
+</tr>
+<tr>
+<td>Ariq Danish bin Nor Razak</td>
+<td>24006796</td>
+<td><code>feat/motion-planner</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-how-we-ran-the-sprints">1. How we ran the sprints</h2>
+<p>We split the work by service so each of us owned one microservice end-to-end. Aiman took the integrator role because his branch (<code>feat/integration</code>) has to hold the shared pydantic contracts and the compose file everyone else depends on.</p>
+<p>Two sprint cycles were run. Sprint 1 focused on getting each service to <em>exist</em> (scaffold, unit tests, contract rows filled). Sprint 2 focused on getting the services to <em>talk to each other</em> (integration tests, docker compose, CI, persistence proof, scaling demo).</p>
+<p>The full atomic task list (one row per commit) is in <a href="../TASK_ALLOCATION.md"><code>TASK_ALLOCATION.md</code></a>. Aiman broke each sprint's work into ~5–8 tiny tasks per person before the sprint started, so nobody had to guess what to do next.</p>
+<h3 id="sprint-1-2630-jul-2026-tag-sprint-1-merged-in-pr-2">Sprint 1 (26–30 Jul 2026) — tag <code>sprint-1</code>, merged in PR #2</h3>
+<table>
+<thead>
+<tr>
+<th>Owner</th>
+<th>Module</th>
+<th>What shipped</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aiman (22011708)</td>
+<td>integration + contracts</td>
+<td>Repo scaffold (A-01), pydantic contracts v1.0 (A-02), interface-contracts.md (A-03), sim/extension.py pointer (A-04)</td>
+</tr>
+<tr>
+<td>Hazieq (24006633)</td>
+<td>nl-command</td>
+<td>FastAPI service (Hazieq-01), Ollama wire-up (Hazieq-02), unit tests happy + fail (Hazieq-03/04), contract rows (Hazieq-05)</td>
+</tr>
+<tr>
+<td>Ariq (24006796)</td>
+<td>motion-planner</td>
+<td>Wrap robot_ik in FastAPI (Ariq-01/02), IK round-trip test (Ariq-03), unreachable + colliding fail tests (Ariq-04/05), contract rows (Ariq-06)</td>
+</tr>
+<tr>
+<td>Ibrohim (24006396)</td>
+<td>dispatcher + actuation</td>
+<td>Dispatcher scaffold (Ibrohim-01), 30 fps interpolator + ZMQ (Ibrohim-02), unit tests (Ibrohim-03), actuation service (Ibrohim-04), MQTT unit test (Ibrohim-05), contract rows (Ibrohim-06)</td>
+</tr>
+<tr>
+<td>Raziq (24006626)</td>
+<td>telemetry + persistence</td>
+<td>TimescaleDB init.sql (Raziq-01), telemetry service (Raziq-02/03), Timescale + Redis unit tests (Raziq-04/05), contract rows (Raziq-06)</td>
+</tr>
+</tbody>
+</table>
+<p>At the end of sprint 1 we did a group merge — all five feature branches into <code>feat/integration</code>, then a single PR (#2) into <code>main</code>. Two teammates had integration bugs that only showed up once everyone's code was in the same tree, so mid-sprint we wrote <a href="../FIXES_SPRINT1.md"><code>FIXES_SPRINT1.md</code></a> as a paste-and-run cheat sheet for them. Aiman applied Ariq's two Dockerfile fixes directly (commit <code>17edbc1</code>) since Ariq was blocked on it and the deadline was moving.</p>
+<h3 id="sprint-2-31-jul-2026-tag-sprint-2-merged-in-pr-3">Sprint 2 (31 Jul 2026) — tag <code>sprint-2</code>, merged in PR #3</h3>
+<table>
+<thead>
+<tr>
+<th>Owner</th>
+<th>Module</th>
+<th>What shipped</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aiman (22011708)</td>
+<td>compose + system test + integration hotfixes + submission docs</td>
+<td>docker-compose.yml + mosquitto config (A-06), full-stack system test (A-07), 4 rubric-artifact notebooks + supporting reports, ~10 integration hotfixes found in live smoke test</td>
+</tr>
+<tr>
+<td>Hazieq (24006633)</td>
+<td>CI + regression</td>
+<td>Integration test nl→planner (Hazieq-06), CI pipeline lint/unit/integration/regression (Hazieq-07), golden IK regression suite (Hazieq-08)</td>
+</tr>
+<tr>
+<td>Ariq (24006796)</td>
+<td>scaling + integration</td>
+<td>Integration test planner→dispatcher (Ariq-07), nginx round-robin config + SCALING_PROOF.md (Ariq-08)</td>
+</tr>
+<tr>
+<td>Ibrohim (24006396)</td>
+<td>integration</td>
+<td>Integration test actuation→mosquitto against real broker via testcontainers (Ibrohim-07)</td>
+</tr>
+<tr>
+<td>Raziq (24006626)</td>
+<td>integration + Grafana + persistence</td>
+<td>Integration test sim→telemetry (Raziq-07), Grafana provisioning + dashboard JSON (Raziq-08), persistence proof procedure and screenshots (Raziq-09)</td>
+</tr>
+</tbody>
+</table>
+<p>Sprint 2 also had a smaller group merge story: PR #2 landed most of the sprint-2 code, but the live smoke test caught about ten integration bugs (see §3 below), so we opened PR #3 with all the hotfixes bundled and merged it as the sprint-2 endpoint. Tag <code>sprint-2</code> on that merge commit.</p>
+<hr />
+<h2 id="2-version-control-rules-we-stuck-to">2. Version control rules we stuck to</h2>
+<ul>
+<li><strong>One feature branch per person.</strong> Everyone's commits stay author-attributed; nobody rebases anyone else's work.</li>
+<li><strong>One task = one commit</strong> — commit message starts with the atomic task ID (e.g. <code>Hazieq-06:</code>, <code>Raziq-08:</code>), so <code>git log</code> reads like the sprint plan.</li>
+<li><strong><code>services/shared/schemas.py</code> is frozen.</strong> Only Aiman edits it; otherwise every service could disagree on a field and the whole chain breaks silently.</li>
+<li><strong>No direct pushes to <code>main</code>.</strong> All changes go into <code>feat/integration</code> first, then a single group PR into <code>main</code> per sprint boundary.</li>
+<li><strong>Sprint tags.</strong> <code>sprint-1</code> sits on the sprint-1 merge commit. <code>sprint-2</code> sits on the PR #3 merge commit. Both tags are pushed.</li>
+</ul>
+<p>Both sprints ended with a real group merge PR into main, not a series of individual PRs. GitHub shows "5 contributors" on both merged PRs — which is the visible evidence that everyone actually authored commits that landed on <code>main</code>.</p>
+<p><img alt="Sprint tags" src="./screenshots/sprint_tags.png" /></p>
+<p><img alt="CI green on the sprint-2 hotfix PR" src="./screenshots/ci_green.png" /></p>
+<hr />
+<h2 id="3-tests-unit-integration-system-regression">3. Tests — unit, integration, system, regression</h2>
+<p>Every module has its own unit tests. Every service pair has an integration test. There's one system test that hits the whole stack.</p>
+<h3 id="31-unit-tests-with-pass-and-fail-cases">3.1 Unit tests with pass AND fail cases</h3>
+<p>The rubric asks for both — a test that proves the happy path works, AND a test that proves the service rejects bad input correctly.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Test file</th>
+<th>Passing case</th>
+<th>Failing case (proves rejection)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nl-command</td>
+<td><code>tests/unit/test_nl_command.py</code></td>
+<td>Valid LLM completion → correct pose</td>
+<td>Empty text → HTTP 422; garbled LLM output → HTTP 422</td>
+</tr>
+<tr>
+<td>motion-planner</td>
+<td><code>tests/unit/test_motion_planner.py</code></td>
+<td>IK round-trip within 1e-3 rad</td>
+<td>Unreachable target → <code>reachable=false</code>; colliding → <code>collision_free=false</code></td>
+</tr>
+<tr>
+<td>dispatcher</td>
+<td><code>tests/unit/test_dispatcher.py</code></td>
+<td>30 frames sent; first + last correct</td>
+<td>—</td>
+</tr>
+<tr>
+<td>actuation</td>
+<td><code>tests/unit/test_actuation.py</code></td>
+<td>Correct MQTT topic and payload published</td>
+<td>Wrong joint count in request → HTTP 422</td>
+</tr>
+<tr>
+<td>telemetry</td>
+<td><code>tests/unit/test_telemetry.py</code></td>
+<td>Row inserted in Timescale; <code>state:latest</code> SET in Redis</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-integration-tests-real-infrastructure-not-mocks">3.2 Integration tests — real infrastructure, not mocks</h3>
+<p>We deliberately avoided mocking the DB and MQTT broker in the integration tier. <code>testcontainers</code> spins up a real Postgres / Redis / Mosquitto per test so the test actually exercises the wire format.</p>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Test file</th>
+<th>Real infrastructure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nl-command → motion-planner</td>
+<td><code>tests/integration/test_nl_to_planner.py</code></td>
+<td>Live TestClient chain (Ollama stubbed only because the LLM output is non-deterministic)</td>
+</tr>
+<tr>
+<td>motion-planner → dispatcher</td>
+<td><code>tests/integration/test_planner_to_dispatcher.py</code></td>
+<td>Live TestClient chain, ZMQ socket mocked</td>
+</tr>
+<tr>
+<td>actuation → mosquitto</td>
+<td><code>tests/integration/test_actuation_mqtt.py</code></td>
+<td>testcontainers spawns real <code>eclipse-mosquitto:2</code></td>
+</tr>
+<tr>
+<td>sim state → Timescale + Redis</td>
+<td><code>tests/integration/test_sim_to_telemetry.py</code></td>
+<td>testcontainers spawns real Timescale + Redis</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-system-test">3.3 System test</h3>
+<p><code>tests/system/test_end_to_end.py</code> — brings up the full compose stack, POSTs <code>/command</code>, and asserts that a <code>robot_state</code> row lands in TimescaleDB within 10 seconds.</p>
+<h3 id="34-regression-suite-in-ci">3.4 Regression suite in CI</h3>
+<p><code>tests/regression/test_golden_ik.py</code> — a fixed set of target poses paired with the expected <code>reachable</code> and <code>collision_free</code> results. If anyone changes <code>robot_ik.py</code> in a way that drifts the IK output, the <code>regression</code> CI job goes red. This runs on every push, not just merges.</p>
+<hr />
+<h2 id="4-cicd">4. CI/CD</h2>
+<p><code>.github/workflows/ci.yml</code> runs on every push and every pull request. The jobs chain: <strong>lint → unit → integration → regression</strong>. Any job failing fails the whole build.</p>
+<ul>
+<li><strong>lint</strong> uses <code>ruff</code> — style errors, unused imports, unsorted imports.</li>
+<li><strong>unit</strong> — <code>pytest tests/unit</code>, fast, no infrastructure needed.</li>
+<li><strong>integration</strong> — GitHub Actions provisions Timescale, Redis, and Mosquitto as service containers next to the runner; testcontainers spawns per-test containers on top for the pair-isolation tests.</li>
+<li><strong>regression</strong> — the golden IK cases above. Fails the build if math drifts.</li>
+</ul>
+<p><img alt="CI green" src="./screenshots/ci_green.png" /></p>
+<p>All 8 checks passed on the sprint-2 hotfix PR (4 workflow jobs × 2 triggers per PR: <code>push</code> and <code>pull_request</code>). This is the automatic build + automatic regression test loop the rubric wants.</p>
+<hr />
+<h2 id="5-everything-is-verifiable-on-github">5. Everything is verifiable on GitHub</h2>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sprint 1 tag</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/releases/tag/sprint-1</td>
+</tr>
+<tr>
+<td>Sprint 2 tag</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/releases/tag/sprint-2</td>
+</tr>
+<tr>
+<td>Sprint 1 merge PR</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/pull/2</td>
+</tr>
+<tr>
+<td>Sprint 2 hotfix PR</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/pull/3</td>
+</tr>
+<tr>
+<td>CI runs</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/actions</td>
+</tr>
+<tr>
+<td>Task allocation</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/blob/main/TASK_ALLOCATION.md</td>
+</tr>
+<tr>
+<td>Sprint log</td>
+<td>https://github.com/ManHazz/RBB2013-Digital-Twin/blob/main/docs/SPRINT_LOG.md</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-rubric-coverage">6. Rubric coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Rubric requirement</th>
+<th>Where it's satisfied</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sprint planning + execution with per-teammate deliverables</td>
+<td>§1 (both sprint tables with student IDs) + <code>TASK_ALLOCATION.md</code></td>
+</tr>
+<tr>
+<td>At least 2 sprint cycles</td>
+<td>§1 (sprint 1 + sprint 2 both tagged, both merged)</td>
+</tr>
+<tr>
+<td>Consistent version control + individual + group merge</td>
+<td>§2 (one branch per person, sprint tags, group PRs #2 and #3)</td>
+</tr>
+<tr>
+<td>Unit + interface/integration tests for each module</td>
+<td>§3.1 + §3.2 (per-module unit; per-pair integration)</td>
+</tr>
+<tr>
+<td>Pass AND fail cases demonstrated</td>
+<td>§3.1 (fail-case column is populated for every module that has rejection logic)</td>
+</tr>
+<tr>
+<td>System tests</td>
+<td>§3.3 (<code>test_end_to_end.py</code>)</td>
+</tr>
+<tr>
+<td>Automatic build + regression test suite</td>
+<td>§4 (<code>.github/workflows/ci.yml</code> chained lint → unit → integration → regression on every push)</td>
+</tr>
+<tr>
+<td>For all modules of the system</td>
+<td>§1 (every teammate authored commits in both sprints, across every module)</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

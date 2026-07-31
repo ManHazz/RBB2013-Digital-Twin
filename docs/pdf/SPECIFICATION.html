@@ -7793,7 +7793,92 @@ a.anchor-link {
     white-space: normal;
   }
 </style>
-<!-- End of mermaid configuration --></head>
+<!-- End of mermaid configuration --><style>
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+  }
+  @media print {
+    html, body {
+      width: 210mm;
+      max-width: 210mm;
+      background: white;
+    }
+    body {
+      font-size: 10.5pt;
+      line-height: 1.45;
+    }
+    /* prevent code + tables overflowing right edge */
+    pre, code {
+      white-space: pre-wrap !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      font-size: 9pt !important;
+    }
+    table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      font-size: 9pt !important;
+      border-collapse: collapse;
+    }
+    td, th {
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      max-width: 100% !important;
+      padding: 4px 6px !important;
+      vertical-align: top;
+    }
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+      page-break-inside: avoid;
+    }
+    h1, h2, h3, h4 {
+      page-break-after: avoid;
+    }
+    .jp-Cell, .cell, .jp-CodeCell {
+      page-break-inside: avoid;
+    }
+    /* Jupyter notebook wrappers */
+    .jp-InputArea-editor, .jp-OutputArea-output, .highlight, .input_area {
+      max-width: 100% !important;
+      overflow: hidden !important;
+    }
+    /* Long link URLs shouldn't blow out the layout */
+    a {
+      word-break: break-all;
+    }
+  }
+  /* apply to screen too so print-preview shows the same */
+  pre, code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100%;
+  }
+  table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: auto;
+    word-wrap: break-word;
+    border-collapse: collapse;
+  }
+  td, th {
+    word-wrap: break-word;
+    padding: 6px 8px;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+</head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e6e57123">
