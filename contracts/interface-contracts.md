@@ -131,13 +131,21 @@ Response: {"accepted": true}
 
 **Payload example:**
 ```json
+{
+  "joints": [0.12, -0.45, 1.02, 0.00, 0.33, -0.10],
+  "ee_pose": {"x": 0.42, "y": 0.15, "z": 0.30},
+  "ts": 1721990400.123
+}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** sim-bridge publishes one `SimState` message on every simulation tick (each frame applied in Omniverse), via ZMQ PUB on port 5557.
 
-**Concluded:** _tbd_
+**Concluded:** telemetry's SUB socket receives the message and validates it against the `SimState` schema; the exchange concludes once `insert_state()` and `set_latest_state()` have both run for that message. This is a fire-and-forget publish — no ack is sent back to sim-bridge.
 
-**Error modes:** _tbd_
+**Error modes:**
+- Malformed/incomplete payload → `SimState.model_validate` raises a validation error → caught by telemetry's outer try/except, logged, message dropped (no retry).
+- ZMQ PUB/SUB has no delivery guarantee: if telemetry connects after sim-bridge starts publishing, frames sent before the subscription completes are lost.
+- If the telemetry container is down entirely, all sim state during that window is lost — no buffering or replay.
 
 ---
 
@@ -147,13 +155,21 @@ Response: {"accepted": true}
 
 **Payload example:**
 ```sql
+INSERT INTO robot_state (ts, joints, ee_x, ee_y, ee_z)
+VALUES (
+  to_timestamp(1721990400.123),
+  ARRAY[0.12, -0.45, 1.02, 0.00, 0.33, -0.10],
+  0.42, 0.15, 0.30
+);
 ```
 
-**Initiated:** _tbd_
+**Initiated:** on every `SimState` message telemetry receives from sim-bridge — one INSERT per message via `insert_state()`.
 
-**Concluded:** _tbd_
+**Concluded:** the transaction commits (`conn.commit()`); the row is durable in the `robot_state` hypertable.
 
-**Error modes:** _tbd_
+**Error modes:**
+- DB connection dropped or Timescale unavailable → psycopg raises a connection error → caught by telemetry's outer try/except, logged, loop continues (that state reading is dropped — no retry queue).
+- Malformed data (wrong joint-array length, missing field) never reaches this insert — it's rejected earlier by `SimState` schema validation.
 
 ---
 
@@ -162,14 +178,15 @@ Response: {"accepted": true}
 **Owner:** Raziq
 
 **Payload example:**
-```
-```
+key: state:latest
+value: {"joints": [0.12,-0.45,1.02,0.00,0.33,-0.10], "ee_pose": {"x":0.42,"y":0.15,"z":0.30}, "ts":1721990400.123}
 
-**Initiated:** _tbd_
+**Initiated:** on every `SimState` message telemetry receives — same trigger as the TimescaleDB insert, via `set_latest_state()`.
 
-**Concluded:** _tbd_
+**Concluded:** the `SET` completes and overwrites whatever was previously at `state:latest` — this is the piece that proves *state* persistence (only the most recent reading is kept, no history, unlike the TimescaleDB side).
 
-**Error modes:** _tbd_
+**Error modes:**
+- Redis unavailable → connection error raised → caught by telemetry's outer try/except, logged, loop continues; the latest-state cache simply goes stale until Redis recovers (no retry/backoff implemented).
 
 ---
 
@@ -196,10 +213,16 @@ Response: {"accepted": true}
 
 **Payload example:**
 ```sql
+SELECT ts, joints, ee_x, ee_y, ee_z
+FROM robot_state
+WHERE ts > now() - interval '1 hour'
+ORDER BY ts;
 ```
 
-**Initiated:** _tbd_
+**Initiated:** on each Grafana dashboard panel refresh (Grafana's own configured polling interval — a read-only query, no side effects on the service).
 
-**Concluded:** _tbd_
+**Concluded:** query returns the matching rows and the panel renders them.
 
-**Error modes:** _tbd_
+**Error modes:**
+- TimescaleDB unreachable → Grafana panel shows a query error / "no data", no retries triggered from the telemetry side (this is a pure read path, telemetry itself isn't involved once the row is committed).
+- Wide time-range queries over raw `robot_state` rows can get slow without a continuous aggregate — not addressed in this scope; documented here as a known limitation rather than solved.
