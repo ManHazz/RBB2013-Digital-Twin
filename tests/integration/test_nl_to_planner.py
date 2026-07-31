@@ -7,8 +7,8 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from services.nl_command import app as nl_module
 from services.motion_planner.app import app as mp_app
+from services.nl_command import app as nl_module
 
 
 FAKE_OLLAMA_RESPONSE = {
