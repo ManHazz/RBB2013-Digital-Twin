@@ -1,4 +1,4 @@
 pyzmq
 psycopg[binary]
 redis
-pydantic>=2
+pydantic>=2testcontainers[postgres,redis]
