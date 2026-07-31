@@ -1,10 +1,56 @@
 # XLeRobot Digital Twin — Atomic Task List (Group of 5)
 
-**How to use this file:** each teammate finds their section, copies the **next unchecked task block** into Claude Code, and lets it run. Claude Code does exactly that task, commits, and pushes. Nobody needs to plan, design, or decide — the task tells them everything.
+## How to use this file
 
-**Do tasks in order** within your section. A task's *Preconditions* line names the task that must be done first (either yours or someone else's).
+Your branch is already created on GitHub — you just need to work in it.
 
-**Sprint 2 tasks will be added after Sprint 1 lands.** Do not skip ahead.
+### One-time setup (do this once)
+
+```bash
+git clone https://github.com/ManHazz/RBB2013-Digital-Twin.git
+cd RBB2013-Digital-Twin
+git checkout <your-branch>          # e.g. feat/nl-command — see your section below
+python3 -m venv venv
+source venv/bin/activate            # Windows: venv\Scripts\activate
+```
+
+### For each task block below
+
+**If you have Claude Code CLI:** paste the whole task block into Claude Code — it will create files, run checks, and push automatically.
+
+**If you're on Gemini Pro / Claude web / any chat LLM:** follow this drill for each task:
+
+1. **Give the LLM context first.** Open your chat and paste this so it knows the shared contract types:
+
+   ```
+   In this project, all services share these pydantic v2 types from
+   services/shared/schemas.py — do not invent new field names:
+
+   [paste the contents of services/shared/schemas.py here]
+   ```
+
+2. **Paste the task block** (e.g. "Bento-01" — the whole thing including *Do exactly this*, *Done when*, *Push*).
+
+3. **Add this instruction at the end of your chat message:**
+
+   ```
+   Generate every file described in the task. For each file, output
+   its full path as a header, then its complete contents in a fenced
+   code block, so I can copy each one verbatim into my editor.
+   ```
+
+4. **Save each file** the LLM produces to the exact path shown.
+
+5. **Run the "Done when" check** yourself in your terminal. If it fails, paste the error back into the chat and ask the LLM to fix it, then re-save.
+
+6. **Run the `Push` commands** from the task block in your terminal.
+
+### Rules
+
+- **Do tasks in order** within your section. A *Preconditions* line names what must be done first (yours or someone else's).
+- **One task = one commit = one push.** Don't batch multiple tasks into a single commit.
+- **Never edit `services/shared/schemas.py`** — that's Aiman's frozen contract. If you think a field is wrong, message Aiman.
+- **Sprint 2 tasks will be added after Sprint 1 lands.** Do not skip ahead.
 
 ---
 
@@ -384,3 +430,203 @@ When every task above is checked off:
 5. Aiman appends a sprint-1 entry to `docs/SPRINT_LOG.md` (goal, who merged what, what shipped).
 
 **Sprint 2 tasks will be written after sprint-1 is tagged.** They cover: `docker-compose.yml` wiring, CI pipeline, persistence proof, scaling demo, Grafana dashboard, regression tests, system test.
+
+---
+
+# SPRINT 2 — compose, persistence, CI, scaling, system test
+
+**Sprint goal:** Bring the full pipeline up under `docker compose`, prove data + state persistence, add CI + regression + integration + system tests, demonstrate horizontal scaling of the stateless planner, ship Grafana dashboard. Tag `sprint-2` when done.
+
+## Ground rules for sprint 2
+
+- **Same branch as sprint-1** (don't create new branches). Ariq stays on `feat/motion-planner`, Bento on `feat/nl-command`, etc.
+- **Merge `origin/feat/integration` into your branch BEFORE starting**, so you're building on top of the sprint-1 group-merge state:
+  ```bash
+  git checkout <your-branch>
+  git fetch origin
+  git merge origin/feat/integration
+  # if there are conflicts, keep the version from origin/feat/integration
+  git push
+  ```
+- **One task = one commit.** Same rule as sprint 1.
+- **Never edit `services/shared/schemas.py`.** Contract is still frozen at v1.0.
+- **Aiman is sending pre-written files for most tasks.** Save each file at the exact path shown, run the "Done when" check, then push. No LLM chat needed for these — copy-paste only.
+
+---
+
+## Aiman (lead) — branch `feat/integration`
+
+### ☐ A-06 — docker-compose.yml + mosquitto config
+**Preconditions:** sprint-1 group merge into `main` done and tagged `sprint-1`
+**Do exactly this:** Save these two files (Aiman writes them himself, they're in `/tmp/sprint2-handouts/aiman/`):
+- `infra/docker-compose.yml` — wires nl-command, motion-planner (behind nginx planner-lb), dispatcher, actuation, telemetry + timescaledb/redis/mosquitto/grafana. Named volumes for timescale/redis/grafana. sim-bridge reached via `host.docker.internal` (Omniverse is host-side).
+- `infra/mosquitto/mosquitto.conf` — anonymous listener on 1883, persistence enabled.
+**Done when:** `docker compose -f infra/docker-compose.yml up -d` brings all services up and `docker compose ps` reports them healthy.
+**Push:**
+```bash
+git add infra/docker-compose.yml infra/mosquitto/mosquitto.conf
+git commit -m "A-06: docker-compose wiring + mosquitto config"
+git push
+```
+
+### ☐ A-07 — System test
+**Preconditions:** A-06 done; teammates' sprint-2 tasks landed on `feat/integration`
+**Do exactly this:** Save `tests/system/test_end_to_end.py` (from `/tmp/sprint2-handouts/aiman/`). Brings up compose stack, POSTs `/command`, asserts a `robot_state` row lands in TimescaleDB within 10 s.
+**Done when:** with `docker compose up -d` running, `pytest tests/system -v` passes.
+**Push:**
+```bash
+git add tests/system/test_end_to_end.py
+git commit -m "A-07: system test — end-to-end command → timescale row"
+git push
+```
+
+### ☐ A-08 — SPRINT_LOG.md + sprint-2 tag
+**Preconditions:** every teammate's sprint-2 task merged into `main`
+**Do exactly this:** Replace `docs/SPRINT_LOG.md` with the version at `/tmp/sprint2-handouts/aiman/docs__SPRINT_LOG.md` (contains sprint-1 recap + sprint-2 deliverables + rules).
+**Done when:** file committed; `git tag sprint-2 && git push --tags` succeeds.
+**Push:**
+```bash
+git add docs/SPRINT_LOG.md
+git commit -m "A-08: sprint log + tag sprint-2"
+git push
+git tag sprint-2
+git push --tags
+```
+
+---
+
+## Bento — branch `feat/nl-command`
+
+### ☐ Bento-06 — Integration test: nl-command → motion-planner
+**Preconditions:** sprint-1 group merge pulled into your branch
+**Do exactly this:** Save the file Aiman sent you as `tests/integration/test_nl_to_planner.py`. It stubs Ollama with a fake completion, POSTs `/command`, feeds the returned `TargetPose` into motion-planner's `/plan`, asserts the contract holds end-to-end.
+**Done when:** `PYTHONPATH=. pytest tests/integration/test_nl_to_planner.py -v` passes.
+**Push:**
+```bash
+git add tests/integration/test_nl_to_planner.py
+git commit -m "Bento-06: integration test — nl-command → motion-planner contract"
+git push
+```
+
+### ☐ Bento-07 — CI pipeline
+**Preconditions:** Bento-06 done
+**Do exactly this:** Save the file Aiman sent as `.github/workflows/ci.yml`. Four jobs: lint (ruff) → unit → integration (with timescale/redis/mosquitto service containers) → regression (golden IK).
+**Done when:** file committed and pushed; the resulting Actions run appears on GitHub (green or red, both prove CI fired).
+**Push:**
+```bash
+mkdir -p .github/workflows
+git add .github/workflows/ci.yml
+git commit -m "Bento-07: CI pipeline — lint, unit, integration, regression"
+git push
+```
+
+### ☐ Bento-08 — Regression suite (golden IK cases)
+**Preconditions:** Bento-07 done
+**Do exactly this:** Save the file Aiman sent as `tests/regression/test_golden_ik.py`. Fixed target→(reachable, collision_free) pairs — CI fails if IK output drifts.
+**Done when:** `PYTHONPATH=. pytest tests/regression -v` passes; the `regression` job on CI passes.
+**Push:**
+```bash
+mkdir -p tests/regression
+git add tests/regression/test_golden_ik.py
+git commit -m "Bento-08: regression suite — golden IK targets"
+git push
+```
+
+---
+
+## Ariq — branch `feat/motion-planner`
+
+> **Sprint-1 fixes (Dockerfile rebuild + BOM strip) already applied by Aiman on your branch** — commit `17edbc1`. Nothing to do; jump straight to Ariq-07.
+
+### ☐ Ariq-07 — Integration test: motion-planner → dispatcher
+**Preconditions:** sprint-1 group merge pulled into your branch
+**Do exactly this:** Save the file Aiman sent as `tests/integration/test_planner_to_dispatcher.py`. Mocks the dispatcher ZMQ socket, then checks the HTTP contract: planner's output is a valid dispatcher input; unreachable targets don't get dispatched.
+**Done when:** `PYTHONPATH=. pytest tests/integration/test_planner_to_dispatcher.py -v` passes.
+**Push:**
+```bash
+git add tests/integration/test_planner_to_dispatcher.py
+git commit -m "Ariq-07: integration test — motion-planner → dispatcher contract"
+git push
+```
+
+### ☐ Ariq-08 — Scaling: nginx round-robin + proof doc
+**Preconditions:** Ariq-07 done; A-06 (compose) landed
+**Do exactly this:** Save these two files from `/tmp/sprint2-handouts/ariq/`:
+- `infra/nginx/nginx.conf` — upstream `motion-planner:8020`, round-robin.
+- `docs/SCALING_PROOF.md` — commands to run the scale demo, spot to attach screenshots.
+Then run the demo yourself and paste your real numbers + screenshots into the doc.
+**Done when:** `docker compose up -d --scale motion-planner=3 planner-lb motion-planner` + the 30-request burst script in SCALING_PROOF.md shows each replica handled roughly a third of requests.
+**Push:**
+```bash
+mkdir -p infra/nginx
+git add infra/nginx/nginx.conf docs/SCALING_PROOF.md
+git commit -m "Ariq-08: nginx round-robin + scaling proof"
+git push
+```
+
+---
+
+## Ibrohim — branch `feat/dispatcher-actuation`
+
+### ☐ Ibrohim-07 — Integration test: actuation → mosquitto
+**Preconditions:** sprint-1 group merge pulled into your branch
+**Do exactly this:** Save the file Aiman sent as `tests/integration/test_actuation_mqtt.py`. Spins up a real `eclipse-mosquitto:2` container via `testcontainers`, POSTs to `/actuate`, subscribes to `xlerobot/cmd`, asserts the payload arrives with the correct joints. Also tests the 422 for wrong joint count.
+**Done when:** `PYTHONPATH=. pytest tests/integration/test_actuation_mqtt.py -v` passes (needs Docker running locally). Add `testcontainers` and `paho-mqtt` to `services/actuation/requirements.txt` if missing.
+**Push:**
+```bash
+git add tests/integration/test_actuation_mqtt.py services/actuation/requirements.txt
+git commit -m "Ibrohim-07: integration test — actuation → mosquitto round-trip"
+git push
+```
+
+---
+
+## Raziq — branch `feat/telemetry-observability`
+
+### ☐ Raziq-07 — Integration test: sim state → telemetry → timescale + redis
+**Preconditions:** sprint-1 group merge pulled into your branch
+**Do exactly this:** Save the file Aiman sent as `tests/integration/test_sim_to_telemetry.py`. Uses `testcontainers` to spin real TimescaleDB + Redis, calls telemetry's `insert_state` and `set_latest_state` with a fake `SimState`, then reads back from both stores and asserts the values match. Also checks Redis overwrite semantics.
+**Done when:** `PYTHONPATH=. pytest tests/integration/test_sim_to_telemetry.py -v` passes (needs Docker). Add `testcontainers[postgres,redis]` to `services/telemetry/requirements.txt` if missing.
+**Push:**
+```bash
+git add tests/integration/test_sim_to_telemetry.py services/telemetry/requirements.txt
+git commit -m "Raziq-07: integration test — sim state lands in Timescale + Redis"
+git push
+```
+
+### ☐ Raziq-08 — Grafana provisioning + dashboard
+**Preconditions:** A-06 (compose has grafana + volumes) landed
+**Do exactly this:** Save these three files (Aiman sent them, in `/tmp/sprint2-handouts/raziq/`):
+- `infra/grafana/provisioning/datasources/timescale.yml` — Postgres datasource pointing at `timescaledb:5432`.
+- `infra/grafana/provisioning/dashboards/dashboards.yml` — provider loading dashboards from `/var/lib/grafana/dashboards`.
+- `infra/grafana/dashboards/robot_state.json` — 3 panels: ee position over time, joint 0, rows in last 5m.
+**Done when:** `docker compose up -d grafana`, browse to `http://localhost:3000` (admin/admin), the "XLeRobot — Robot State" dashboard is present and shows data after a run.
+**Push:**
+```bash
+mkdir -p infra/grafana/provisioning/datasources infra/grafana/provisioning/dashboards infra/grafana/dashboards
+git add infra/grafana/
+git commit -m "Raziq-08: Grafana provisioning + robot_state dashboard"
+git push
+```
+
+### ☐ Raziq-09 — Persistence proof
+**Preconditions:** Raziq-08 done, A-06 done
+**Do exactly this:** Save `docs/PERSISTENCE_PROOF.md` (from `/tmp/sprint2-handouts/raziq/`). Follow the procedure inside: run a command → screenshot Timescale row count + Redis latest → `docker compose restart timescaledb redis` → screenshot again → paste screenshots into the doc's checklist.
+**Done when:** doc committed with 5+ screenshots showing data and state survived the restart.
+**Push:**
+```bash
+git add docs/PERSISTENCE_PROOF.md
+git commit -m "Raziq-09: persistence proof — data + state survive restart"
+git push
+```
+
+---
+
+## Sprint 2 done — group merge
+
+When every task above is checked off:
+1. Aiman verifies each teammate has an open PR into `main` for sprint-2 commits.
+2. Group reviews PRs.
+3. Merge all in one session.
+4. Tag: `git tag sprint-2 && git push --tags` (A-08).
+5. Aiman finalises `docs/SPRINT_LOG.md` sprint-2 entry with the actual merged deliverables.
