@@ -536,35 +536,10 @@ git push
 
 ## Ariq — branch `feat/motion-planner`
 
-### ☐ Ariq-FIX-01 — Fix Dockerfile (from FIXES_SPRINT1.md)
-**Preconditions:** sprint-1 group merge pulled into your branch
-**Do exactly this:** Replace `services/motion_planner/Dockerfile` completely with the file Aiman sent (see `/tmp/sprint2-handouts/ariq/services__motion_planner__Dockerfile`). It fixes the missing `services/shared` copy, sets `PYTHONPATH=/app`, and uses the absolute module path in `CMD`.
-**Done when:** `docker build -f services/motion_planner/Dockerfile -t motion-planner .` succeeds from the repo root; the container starts without ImportError.
-**Push:**
-```bash
-git add services/motion_planner/Dockerfile
-git commit -m "Ariq-FIX-01: rebuild motion-planner Dockerfile with shared+abs paths"
-git push
-```
-
-### ☐ Ariq-FIX-02 — Strip UTF-8 BOM
-**Preconditions:** Ariq-FIX-01 done
-**Do exactly this:** Strip BOM from any file that has one in `services/motion_planner/`:
-```bash
-for f in services/motion_planner/app.py services/motion_planner/Dockerfile services/motion_planner/requirements.txt; do
-  sed -i '1s/^\xEF\xBB\xBF//' "$f"
-done
-```
-**Done when:** `head -c 3 services/motion_planner/app.py | xxd` shows no `ef bb bf` prefix.
-**Push:**
-```bash
-git add services/motion_planner/
-git commit -m "Ariq-FIX-02: strip UTF-8 BOM from motion-planner files"
-git push
-```
+> **Sprint-1 fixes (Dockerfile rebuild + BOM strip) already applied by Aiman on your branch** — commit `17edbc1`. Nothing to do; jump straight to Ariq-07.
 
 ### ☐ Ariq-07 — Integration test: motion-planner → dispatcher
-**Preconditions:** Ariq-FIX-02 done
+**Preconditions:** sprint-1 group merge pulled into your branch
 **Do exactly this:** Save the file Aiman sent as `tests/integration/test_planner_to_dispatcher.py`. Mocks the dispatcher ZMQ socket, then checks the HTTP contract: planner's output is a valid dispatcher input; unreachable targets don't get dispatched.
 **Done when:** `PYTHONPATH=. pytest tests/integration/test_planner_to_dispatcher.py -v` passes.
 **Push:**
