@@ -8,7 +8,7 @@ from testcontainers.postgres import PostgresContainer
 from testcontainers.redis import RedisContainer
 
 from services.shared.schemas import SimState, TargetPose
-from services.telemetry.app import insert_state, set_latest_state, REDIS_LATEST_KEY
+from services.telemetry.app import REDIS_LATEST_KEY, insert_state, set_latest_state
 
 INIT_SQL_PATH = "infra/timescaledb/init.sql"
 
@@ -16,9 +16,8 @@ INIT_SQL_PATH = "infra/timescaledb/init.sql"
 def _apply_init_sql(dsn: str) -> None:
     with open(INIT_SQL_PATH) as f:
         sql = f.read()
-    with psycopg.connect(dsn, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
+    with psycopg.connect(dsn, autocommit=True) as conn, conn.cursor() as cur:
+        cur.execute(sql)
 
 
 def _fake_state() -> SimState:

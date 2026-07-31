@@ -13,7 +13,6 @@ import httpx
 import psycopg
 import pytest
 
-
 NL_URL = os.environ.get("NL_URL", "http://localhost:8010")
 PG_DSN = os.environ.get(
     "PG_DSN", "postgres://postgres:postgres@localhost:5432/robot"

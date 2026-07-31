@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 from services.motion_planner.app import app as mp_app
 from services.nl_command import app as nl_module
 
-
 FAKE_OLLAMA_RESPONSE = {
     "response": json.dumps([
         {"action": "above", "wait": 1.0},

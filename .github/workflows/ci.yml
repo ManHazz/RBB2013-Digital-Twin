@@ -102,7 +102,7 @@ jobs:
       - name: Install deps
         run: |
           pip install -r services/motion_planner/requirements.txt
-          pip install pytest
+          pip install pytest httpx
       - name: Run regression suite (golden IK cases)
         env:
           PYTHONPATH: ${{ github.workspace }}

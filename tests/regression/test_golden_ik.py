@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from services.motion_planner.app import app as mp_app
 
-
 GOLDEN_CASES = [
     # (target, expected_reachable, expected_collision_free)
     ({"x": 40.0, "y": 13.75, "z": 0.0}, True, True),

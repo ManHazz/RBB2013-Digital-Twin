@@ -4,12 +4,13 @@
 # DispatchRequest for dispatcher. Dispatcher's ZMQ socket is mocked out
 # so we test the HTTP contract in isolation.
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
 
-from services.motion_planner.app import app as mp_app
+import pytest
+from fastapi.testclient import TestClient
+
 from services.dispatcher import app as disp_module
+from services.motion_planner.app import app as mp_app
 
 
 @pytest.fixture(autouse=True)
