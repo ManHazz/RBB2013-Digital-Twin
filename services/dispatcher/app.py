@@ -35,6 +35,11 @@ def _startup_zmq() -> None:
     global context, socket
     context = zmq.Context()
     socket = context.socket(zmq.PUSH)
+    # LINGER=0 means shutdown discards any queued-but-unsent messages
+    # instead of blocking on context.term() waiting for a peer to accept
+    # them. Without this, test shutdown hangs forever in CI where the
+    # sim-bridge peer is unreachable.
+    socket.setsockopt(zmq.LINGER, 0)
     socket.connect(SIM_BRIDGE_ADDR)
 
 
