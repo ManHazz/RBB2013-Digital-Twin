@@ -27,13 +27,19 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+// request
+{ "text": "pick up the ball" }
+// response (200)
+{ "x": 40.0, "y": 13.75, "z": 0.0 }
 ```
 
-**Initiated:** _tbd_
+**Initiated:** user submits a text instruction.
 
-**Concluded:** _tbd_
+**Concluded:** a `TargetPose` is returned to the caller.
 
-**Error modes:** _tbd_
+**Error modes:**
+- `422` — empty text, LLM's plan could not be parsed as JSON, or the plan resolved to only "home" steps (no movement target).
+- `502` — Ollama unreachable or returned an HTTP error.
 
 ---
 
@@ -43,13 +49,24 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+// request
+{
+  "model": "qwen2.5:3b",
+  "prompt": "/no_think\nCommand: pick up the ball",
+  "system": "<SYSTEM_PROMPT — see app.py>",
+  "stream": false
+}
+// response
+{ "response": "[{\"action\":\"above\",\"wait\":1.0},{\"action\":\"grab\",\"wait\":1.0}]" }
 ```
 
-**Initiated:** _tbd_
+**Initiated:** on every `/command` call, after validating the input text is non-empty.
 
-**Concluded:** _tbd_
+**Concluded:** Ollama returns a completion string containing a JSON array of action steps, which nl-command parses and converts to an `(x, y, z)` target via `action_target()`.
 
-**Error modes:** _tbd_
+**Note:** nl-command has no live scene socket (unlike the original `llm_controller.py`), so it resolves targets against a fixed `FALLBACK_TARGET` rather than live obstacle/ball positions.
+
+**Error modes:** connection/timeout to Ollama surfaces as `502` back to the client.
 
 ---
 
@@ -59,13 +76,17 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+// request
+{ "target": { "x": 35.0, "y": 5.0, "z": 10.0 } }
+// response
+{ "joints": [0.32, 1.54, -1.47, 3.08, 0.0, 0.0], "reachable": true, "collision_free": true }
 ```
 
-**Initiated:** _tbd_
+**Initiated:** nl-command has resolved a `TargetPose` from the LLM and forwards it to motion-planner.
 
-**Concluded:** _tbd_
+**Concluded:** motion-planner returns a `PlanResponse` (including `reachable=false` or `collision_free=false` for invalid targets — still HTTP 200).
 
-**Error modes:** _tbd_
+**Error modes:** target out of arm's reach → `reachable=false` (HTTP 200, negative answer not an error). Target causes self-collision → `collision_free=false` (HTTP 200). Malformed body → HTTP 422.
 
 ---
 
@@ -75,13 +96,15 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+Request: {"joints": [0.32, 1.54, -1.47, 3.08, 0.0, 0.0]}
+Response: {"accepted": true}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** motion-planner has produced a valid plan (reachable=true, collision_free=true) and forwards joints to dispatcher
 
-**Concluded:** _tbd_
+**Concluded:** dispatcher acknowledges receipt with accepted=true
 
-**Error modes:** _tbd_
+**Error modes:** motion-planner does not call dispatcher if reachable=false or collision_free=false — invalid plans stop here and are never forwarded
 
 ---
 
@@ -91,13 +114,14 @@ Source of truth for every pair of communicating services in the XLeRobot Digital
 
 **Payload example:**
 ```json
+{"joints": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6], "frame_id": 12}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** when POST /dispatch is accepted with a valid joints target
 
-**Concluded:** _tbd_
+**Concluded:** after 30 frames are sent over ZMQ PUSH on tcp://*:5556
 
-**Error modes:** _tbd_
+**Error modes:** if sim-bridge is not connected, PUSH buffers frames; if buffer fills, dispatcher blocks. No error is returned to the caller of POST /dispatch (fire-and-forget).
 
 ---
 
@@ -172,13 +196,14 @@ value: {"joints": [0.12,-0.45,1.02,0.00,0.33,-0.10], "ee_pose": {"x":0.42,"y":0.
 
 **Payload example:**
 ```json
+{"joints": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]}
 ```
 
-**Initiated:** _tbd_
+**Initiated:** when dispatcher POSTs to actuation's /actuate endpoint after a run's interpolation completes
 
-**Concluded:** _tbd_
+**Concluded:** when MQTT broker acknowledges the publish (rc == 0)
 
-**Error modes:** _tbd_
+**Error modes:** returns HTTP 502 if MQTT publish fails; HTTP 503 if MQTT client not initialised; HTTP 422 if joints array is not exactly 6 floats.
 
 ---
 
