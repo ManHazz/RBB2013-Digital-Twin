@@ -9,15 +9,15 @@
   "panels": [
     {
       "type": "timeseries",
-      "title": "Where the robot's gripper is (cm)",
-      "description": "Position of the robot's hand in 3D space, over time. side = left/right, up = height, forward = away from the base.",
+      "title": "Gripper position (cm)",
+      "description": "Position of the robot's end-effector in the arm's coordinate frame. Reach = distance forward from the base. Height = vertical. Lateral = left-right offset.",
       "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0},
       "id": 1,
       "datasource": {"type": "postgres", "uid": "TimescaleDB"},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ts AS time, ee_x AS \"forward\", ee_y AS \"up\", ee_z AS \"side\" FROM robot_state WHERE $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts AS time, ee_x AS \"Reach\", ee_y AS \"Height\", ee_z AS \"Lateral\" FROM robot_state WHERE $__timeFilter(ts) ORDER BY ts",
           "format": "time_series"
         }
       ],
@@ -28,33 +28,78 @@
     },
     {
       "type": "timeseries",
-      "title": "Shoulder rotation angle (radians)",
-      "description": "Angle of the robot's shoulder joint (joint 0). 0 rad = straight ahead.",
+      "title": "Shoulder rotation (rad)",
+      "description": "Angle of the robot's base/shoulder joint. 0 rad = straight ahead; positive = counter-clockwise from above.",
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
       "id": 2,
       "datasource": {"type": "postgres", "uid": "TimescaleDB"},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT ts AS time, joints[1] AS \"shoulder rotation\" FROM robot_state WHERE $__timeFilter(ts) ORDER BY ts",
+          "rawSql": "SELECT ts AS time, joints[1] AS \"Shoulder\" FROM robot_state WHERE $__timeFilter(ts) ORDER BY ts",
           "format": "time_series"
         }
       ]
     },
     {
       "type": "stat",
-      "title": "Live updates in the last 5 minutes",
-      "description": "How many state snapshots the simulator sent us in the last 5 minutes. Should be ~3,000 during an active run (10 per second). If this is 0, the pipeline is idle.",
+      "title": "Pipeline health",
+      "description": "State-ingest health over the last minute. HEALTHY = telemetry receiving live simulator state (~600 msgs/min at 10 Hz). DEGRADED = partial flow. DOWN = pipeline idle, no state received.",
       "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
       "id": 3,
       "datasource": {"type": "postgres", "uid": "TimescaleDB"},
       "targets": [
         {
           "refId": "A",
-          "rawSql": "SELECT count(*) AS \"updates received\" FROM robot_state WHERE ts > now() - interval '5 minutes'",
+          "rawSql": "SELECT count(*)::float AS value FROM robot_state WHERE ts > now() - interval '1 minute'",
           "format": "table"
         }
-      ]
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0,
+                "result": {"text": "DOWN", "color": "red", "index": 0}
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 299,
+                "result": {"text": "DEGRADED", "color": "orange", "index": 1}
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 300,
+                "to": 100000,
+                "result": {"text": "HEALTHY", "color": "green", "index": 2}
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": null, "color": "red"},
+              {"value": 1, "color": "orange"},
+              {"value": 300, "color": "green"}
+            ]
+          }
+        }
+      }
     }
   ],
   "refresh": "5s",
@@ -65,6 +110,6 @@
   "timezone": "",
   "title": "XLeRobot — Robot Twin Live View",
   "uid": "xlerobot-robot-state",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
