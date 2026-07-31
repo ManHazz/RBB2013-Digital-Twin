@@ -1,0 +1,118 @@
+# Save at: infra/docker-compose.yml
+#
+# All 6 services + infra. sim-bridge is host-side (Omniverse) — reachable
+# from the compose network via host.docker.internal.
+
+services:
+
+  # --- Infra ---
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: robot
+    ports: ["5432:5432"]
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+      - ./timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d robot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes:
+      - redis-data:/data
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports: ["1883:1883"]
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports: ["3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  # --- Services ---
+
+  nl-command:
+    build:
+      context: ..
+      dockerfile: services/nl_command/Dockerfile
+    ports: ["8010:8010"]
+    environment:
+      OLLAMA_HOST: host.docker.internal:11434
+      OLLAMA_MODEL: qwen2.5:3b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  motion-planner:
+    build:
+      context: ..
+      dockerfile: services/motion_planner/Dockerfile
+    # no static "ports:" — nginx fronts it for scaling. Access via planner-lb:8020.
+    expose: ["8020"]
+
+  planner-lb:
+    image: nginx:1.27-alpine
+    ports: ["8020:8020"]
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - motion-planner
+
+  dispatcher:
+    build:
+      context: ..
+      dockerfile: services/dispatcher/Dockerfile
+    ports: ["8030:8030", "5556:5556"]
+    environment:
+      ACTUATION_URL: http://actuation:8040/actuate
+
+  actuation:
+    build:
+      context: ..
+      dockerfile: services/actuation/Dockerfile
+    ports: ["8040:8040"]
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+    depends_on:
+      - mosquitto
+
+  telemetry:
+    build:
+      context: ..
+      dockerfile: services/telemetry/Dockerfile
+    environment:
+      PG_DSN: postgres://postgres:postgres@timescaledb:5432/robot
+      REDIS_URL: redis://redis:6379/0
+      SIM_STATE_ADDR: tcp://host.docker.internal:5557
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  timescaledb-data:
+  redis-data:
+  grafana-data:

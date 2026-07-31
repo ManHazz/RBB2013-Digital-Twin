@@ -13,6 +13,7 @@ env/
 # Editor / OS
 .vscode/
 .idea/
+.claude/
 .DS_Store
 *.swp
 
@@ -21,9 +22,8 @@ env/
 .env.local
 .env.*.local
 
-# kit-app-template — mirror its own .gitignore
+# kit-app-template — mirror its own .gitignore, but keep our custom /source tracked
 kit-app-template/_*/
-kit-app-template/source/
 kit-app-template/source.zip
 kit-app-template/.omniverse_eula_accepted.txt
 kit-app-template/PACKAGE-DEPS.yaml

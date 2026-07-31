@@ -209,7 +209,7 @@ value: {"joints": [0.12,-0.45,1.02,0.00,0.33,-0.10], "ee_pose": {"x":0.42,"y":0.
 
 ## grafana → timescaledb
 
-**Owner:** Raziq
+**Owner:** Raziqw
 
 **Payload example:**
 ```sql

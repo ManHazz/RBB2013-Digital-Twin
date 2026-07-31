@@ -1,0 +1,63 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "End-effector position (x,y,z)",
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT ts AS time, ee_x, ee_y, ee_z FROM robot_state WHERE $__timeFilter(ts) ORDER BY ts",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Joint 0 (shoulder)",
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9},
+      "id": 2,
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT ts AS time, joints[1] AS j0 FROM robot_state WHERE $__timeFilter(ts) ORDER BY ts",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Rows in last 5m",
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9},
+      "id": 3,
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT count(*) FROM robot_state WHERE ts > now() - interval '5 minutes'",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["xlerobot"],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "",
+  "title": "XLeRobot — Robot State",
+  "uid": "xlerobot-robot-state",
+  "version": 1,
+  "weekStart": ""
+}
