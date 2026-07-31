@@ -228,10 +228,13 @@ def _r2d(r):
 
 def apply_joint_angles(prims, angles):
     rot = UsdGeom.XformCommonAPI.RotationOrderXYZ
+    # robot_ik.py uses positive pitch = arm tilts toward +X (toward the ball).
+    # Kit's rotation around +Z with a Y-up arm tilts toward -X (right-hand rule).
+    # Negate j1/j2/j3 so the visual arm tilts the same direction as the IK expects.
     UsdGeom.XformCommonAPI(prims["j0"]).SetRotate(Gf.Vec3f(0, _r2d(angles.get("j0", 0.0)), 0), rot)
-    UsdGeom.XformCommonAPI(prims["j1"]).SetRotate(Gf.Vec3f(0, 0, _r2d(angles.get("j1", 0.0))), rot)
-    UsdGeom.XformCommonAPI(prims["j2"]).SetRotate(Gf.Vec3f(0, 0, _r2d(angles.get("j2", 0.0))), rot)
-    UsdGeom.XformCommonAPI(prims["j3"]).SetRotate(Gf.Vec3f(0, 0, _r2d(angles.get("j3", 0.0))), rot)
+    UsdGeom.XformCommonAPI(prims["j1"]).SetRotate(Gf.Vec3f(0, 0, -_r2d(angles.get("j1", 0.0))), rot)
+    UsdGeom.XformCommonAPI(prims["j2"]).SetRotate(Gf.Vec3f(0, 0, -_r2d(angles.get("j2", 0.0))), rot)
+    UsdGeom.XformCommonAPI(prims["j3"]).SetRotate(Gf.Vec3f(0, 0, -_r2d(angles.get("j3", 0.0))), rot)
     UsdGeom.XformCommonAPI(prims["j4"]).SetRotate(Gf.Vec3f(_r2d(angles.get("j4", 0.0)), 0, 0), rot)
     j5 = _r2d(angles.get("j5", 0.0))
     UsdGeom.XformCommonAPI(prims["fingerL"]).SetRotate(Gf.Vec3f(0, 0, -j5), rot)
